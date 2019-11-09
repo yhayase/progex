@@ -6,10 +6,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
+
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -32,7 +30,7 @@ import ghaffarian.nanologger.Logger;
  */
 public class JavaCDGBuilder {
 	
-	public static ControlDependenceGraph build(File javaFile) throws IOException {
+	public static List<ControlDependenceGraph> build(File javaFile) throws IOException {
 		if (!javaFile.getName().endsWith(".java"))
 			throw new IOException("Not a Java File!");
 		InputStream inFile = new FileInputStream(javaFile);
@@ -42,32 +40,45 @@ public class JavaCDGBuilder {
 		JavaParser parser = new JavaParser(tokens);
 		ParseTree tree = parser.compilationUnit();
 		Logger.debug("CTRL DEP ANALYSIS: " + javaFile.getPath());
-		ControlDependenceGraph cdg = new ControlDependenceGraph(javaFile.getName());
-		ControlDependencyVisitor visitor = new ControlDependencyVisitor(cdg);
-		visitor.visit(tree);
-		return cdg;
+		//ControlDependenceGraph cdg = new ControlDependenceGraph(javaFile.getName(), lineNumber, columnNumber, name, type);
+
+		return build(javaFile.getName(), tree);
 	}
-	
+
+	public static List<ControlDependenceGraph> build(String fileName, ParseTree tree) {
+		ControlDependencyVisitor visitor = new ControlDependencyVisitor(fileName);
+		visitor.visit(tree);
+		return visitor.cdgList;
+	}
+
 
 	private static class ControlDependencyVisitor extends JavaBaseVisitor<Void> {
-		
-		private ControlDependenceGraph cdg;
-		private Deque<PDNode> ctrlDeps;
-		private Deque<PDNode> negDeps;
-		private Deque<Integer> jmpCounts;
-		private Deque<PDNode> jumpDeps;
+		private final String fileName;
+		private final List<ControlDependenceGraph> cdgList;
+
+		private Stack<ControlDependenceGraph> cdgStack;
+
+		private final Deque<PDNode> ctrlDeps;
+		private final Deque<PDNode> negDeps;
+		private final Deque<Integer> jmpCounts;
+		private final Deque<PDNode> jumpDeps;
+		private ControlDependenceGraph currentCdg;
 		private boolean buildRegion;
 		private boolean follows;
 		private int lastFollowDepth;
 		private int regionCounter;
 		private int jmpCounter;
 
-		public ControlDependencyVisitor(ControlDependenceGraph cdg) {
-			this.cdg = cdg;
+		public ControlDependencyVisitor(String fileName) {
+			this.fileName = fileName;
+			cdgList = new ArrayList<>();
 			ctrlDeps = new ArrayDeque<>();
 			negDeps = new ArrayDeque<>();
 			jumpDeps = new ArrayDeque<>();
 			jmpCounts = new ArrayDeque<>();
+
+			currentCdg = null;
+			cdgStack = new Stack<>();
 			buildRegion = false;
 			follows = true;
 			lastFollowDepth = 0;
@@ -75,7 +86,10 @@ public class JavaCDGBuilder {
 			jmpCounter = 0;
 		}
 
-		private void init() {
+		private void prepareForCommit(String fileName, int line, int charPositionInLine, String name, ControlDependenceGraph.Type type) {
+			cdgStack.push(currentCdg);
+			currentCdg = new ControlDependenceGraph(fileName, line, charPositionInLine, name, type);
+
 			ctrlDeps.clear();
 			negDeps.clear();
 			jumpDeps.clear();
@@ -86,31 +100,42 @@ public class JavaCDGBuilder {
 			regionCounter = 1;
 			jmpCounter = 0;
 		}
-		
+		private void commit() {
+			assert currentCdg != null;
+			assert !cdgStack.isEmpty();
+
+			cdgList.add(currentCdg);
+			currentCdg = cdgStack.pop();
+		}
+
 		@Override
 		public Void visitClassBodyDeclaration(JavaParser.ClassBodyDeclarationContext ctx) {
 			// classBodyDeclaration :  ';'  |  'static'? block  |  modifier* memberDeclaration
 			if (ctx.block() != null) {
-				init();
-				//
-				PDNode block = new PDNode();
-				if (ctx.getChildCount() == 2 && ctx.getChild(0).getText().equals("static")) {
-					block.setLineOfCode(ctx.getStart().getLine());
-					block.setCode("static");
-				} else {
-					block.setLineOfCode(0);
-					block.setCode("block");
+				prepareForCommit(fileName, ctx.start.getLine(), ctx.start.getCharPositionInLine(), "<empty>", ControlDependenceGraph.Type.STATIC_INITIALIZER);
+
+				try {
+					PDNode block = new PDNode();
+					if (ctx.getChildCount() == 2 && ctx.getChild(0).getText().equals("static")) {
+						block.setLineOfCode(ctx.getStart().getLine());
+						block.setCode("static");
+					} else {
+						block.setLineOfCode(0);
+						block.setCode("block");
+					}
+					currentCdg.addVertex(block);
+					pushCtrlDep(block);
+					visit(ctx.block());
+					//
+					PDNode exit = new PDNode();
+					exit.setLineOfCode(0);
+					exit.setCode("exit");
+					currentCdg.addVertex(exit);
+					currentCdg.addEdge(new Edge<>(block, new CDEdge(CDEdge.Type.EPSILON), exit));
+					return null;
+				} finally {
+					commit();
 				}
-				cdg.addVertex(block);
-				pushCtrlDep(block);
-				visit(ctx.block());
-				//
-				PDNode exit = new PDNode();
-				exit.setLineOfCode(0);
-				exit.setCode("exit");
-				cdg.addVertex(exit);
-				cdg.addEdge(new Edge<>(block, new CDEdge(CDEdge.Type.EPSILON), exit));
-				return null;
 			} else
 				return visitChildren(ctx);
 		}
@@ -118,22 +143,26 @@ public class JavaCDGBuilder {
 		@Override
 		public Void visitConstructorDeclaration(JavaParser.ConstructorDeclarationContext ctx) {
 			// Identifier formalParameters ('throws' qualifiedNameList)?  constructorBody
-			init();
+			prepareForCommit(fileName, ctx.start.getLine(), ctx.start.getCharPositionInLine(), ctx.Identifier().getText()+".$<init>", ControlDependenceGraph.Type.CONSTRUCTOR);
 			//
-			PDNode entry = new PDNode();
-			entry.setLineOfCode(ctx.getStart().getLine());
-			entry.setCode(ctx.Identifier().getText() + ' ' + getOriginalCodeText(ctx.formalParameters()));
-			cdg.addVertex(entry);
-			//
-			pushCtrlDep(entry);
-			visit(ctx.constructorBody());
-			//
-			PDNode exit = new PDNode();
-			exit.setLineOfCode(0);
-			exit.setCode("exit");
-			cdg.addVertex(exit);
-			cdg.addEdge(new Edge<>(entry, new CDEdge(CDEdge.Type.EPSILON), exit));
-			return null;
+			try {
+				PDNode entry = new PDNode();
+				entry.setLineOfCode(ctx.getStart().getLine());
+				entry.setCode(ctx.Identifier().getText() + ' ' + getOriginalCodeText(ctx.formalParameters()));
+				currentCdg.addVertex(entry);
+				//
+				pushCtrlDep(entry);
+				visit(ctx.constructorBody());
+				//
+				PDNode exit = new PDNode();
+				exit.setLineOfCode(0);
+				exit.setCode("exit");
+				currentCdg.addVertex(exit);
+				currentCdg.addEdge(new Edge<>(entry, new CDEdge(CDEdge.Type.EPSILON), exit));
+				return null;
+			} finally {
+				commit();
+			}
 		}
 
 		@Override
@@ -141,29 +170,33 @@ public class JavaCDGBuilder {
 			// methodDeclaration :
 			//   (typeType|'void') Identifier formalParameters ('[' ']')*
 			//     ('throws' qualifiedNameList)?  ( methodBody | ';' )
-			init();
+			prepareForCommit(fileName, ctx.start.getLine(), ctx.start.getCharPositionInLine(), ctx.Identifier().getText(), ControlDependenceGraph.Type.INSTANCE_METHOD); //TODO: Must recognize static or not
 			//
-			PDNode entry = new PDNode();
-			entry.setLineOfCode(ctx.getStart().getLine());
-			String retType;
-			if (ctx.typeType() == null)
-				retType = "void";
-			else
-				retType = getOriginalCodeText(ctx.typeType());
-			String args = getOriginalCodeText(ctx.formalParameters());
-			entry.setCode(retType + " " + ctx.Identifier() + args);
-			cdg.addVertex(entry);
-			//
-			pushCtrlDep(entry);
-			if (ctx.methodBody() != null)
-				visit(ctx.methodBody());
-			//
-			PDNode exit = new PDNode();
-			exit.setLineOfCode(0);
-			exit.setCode("exit");
-			cdg.addVertex(exit);
-			cdg.addEdge(new Edge<>(entry, new CDEdge(CDEdge.Type.EPSILON), exit));
-			return null;
+			try {
+				PDNode entry = new PDNode();
+				entry.setLineOfCode(ctx.getStart().getLine());
+				String retType;
+				if (ctx.typeType() == null)
+					retType = "void";
+				else
+					retType = getOriginalCodeText(ctx.typeType());
+				String args = getOriginalCodeText(ctx.formalParameters());
+				entry.setCode(retType + " " + ctx.Identifier() + args);
+				currentCdg.addVertex(entry);
+				//
+				pushCtrlDep(entry);
+				if (ctx.methodBody() != null)
+					visit(ctx.methodBody());
+				//
+				PDNode exit = new PDNode();
+				exit.setLineOfCode(0);
+				exit.setCode("exit");
+				currentCdg.addVertex(exit);
+				currentCdg.addEdge(new Edge<>(entry, new CDEdge(CDEdge.Type.EPSILON), exit));
+				return null;
+			} finally {
+				commit();
+			}
 		}
 
 		@Override
@@ -198,8 +231,8 @@ public class JavaCDGBuilder {
 			PDNode thenRegion = new PDNode();
 			thenRegion.setLineOfCode(0);
 			thenRegion.setCode("THEN");
-			cdg.addVertex(thenRegion);
-			cdg.addEdge(new Edge<>(ifNode, new CDEdge(CDEdge.Type.TRUE), thenRegion));
+			currentCdg.addVertex(thenRegion);
+			currentCdg.addEdge(new Edge<>(ifNode, new CDEdge(CDEdge.Type.TRUE), thenRegion));
 			//
 			PDNode elseRegion = new PDNode();
 			elseRegion.setLineOfCode(0);
@@ -213,8 +246,8 @@ public class JavaCDGBuilder {
 			//
 			if (ctx.statement().size() > 1) { // if with else
 				follows = false;
-				cdg.addVertex(elseRegion);
-				cdg.addEdge(new Edge<>(ifNode, new CDEdge(CDEdge.Type.FALSE), elseRegion));
+				currentCdg.addVertex(elseRegion);
+				currentCdg.addEdge(new Edge<>(ifNode, new CDEdge(CDEdge.Type.FALSE), elseRegion));
 				//
 				pushCtrlDep(elseRegion);
 				negDeps.push(thenRegion);
@@ -223,8 +256,8 @@ public class JavaCDGBuilder {
 				popCtrlDep(elseRegion);
 			} else if (buildRegion) {
 				// there is no else, but we need to add the ELSE region
-				cdg.addVertex(elseRegion);
-				cdg.addEdge(new Edge<>(ifNode, new CDEdge(CDEdge.Type.FALSE), elseRegion));
+				currentCdg.addVertex(elseRegion);
+				currentCdg.addEdge(new Edge<>(ifNode, new CDEdge(CDEdge.Type.FALSE), elseRegion));
 			}
 			follows = true;
 			return null;
@@ -246,8 +279,8 @@ public class JavaCDGBuilder {
 				PDNode loopRegion = new PDNode();
 				loopRegion.setLineOfCode(0);
 				loopRegion.setCode("LOOP");
-				cdg.addVertex(loopRegion);
-				cdg.addEdge(new Edge<>(forExpr, new CDEdge(CDEdge.Type.TRUE), loopRegion));
+				currentCdg.addVertex(loopRegion);
+				currentCdg.addEdge(new Edge<>(forExpr, new CDEdge(CDEdge.Type.TRUE), loopRegion));
 				//
 				pushLoopBlockDep(loopRegion);
 				visit(ctx.statement());
@@ -280,8 +313,8 @@ public class JavaCDGBuilder {
 				PDNode loopRegion = new PDNode();
 				loopRegion.setLineOfCode(0);
 				loopRegion.setCode("LOOP");
-				cdg.addVertex(loopRegion);
-				cdg.addEdge(new Edge<>(forExpr, new CDEdge(CDEdge.Type.TRUE), loopRegion));
+				currentCdg.addVertex(loopRegion);
+				currentCdg.addEdge(new Edge<>(forExpr, new CDEdge(CDEdge.Type.TRUE), loopRegion));
 				//
 				pushLoopBlockDep(loopRegion);
 				visit(ctx.statement());
@@ -291,8 +324,8 @@ public class JavaCDGBuilder {
 					forUpdate.setCode(getOriginalCodeText(ctx.forControl().forUpdate()));
 					// we don't use 'addNodeEdge(forUpdate)' because the behavior of for-update
 					// step is different from other statements with regards to break/continue.
-					cdg.addVertex(forUpdate);
-					cdg.addEdge(new Edge<>(ctrlDeps.peek(), new CDEdge(CDEdge.Type.EPSILON), forUpdate));
+					currentCdg.addVertex(forUpdate);
+					currentCdg.addEdge(new Edge<>(ctrlDeps.peek(), new CDEdge(CDEdge.Type.EPSILON), forUpdate));
 				}
 				popLoopBlockDep(loopRegion);
 			}
@@ -310,8 +343,8 @@ public class JavaCDGBuilder {
 			PDNode loopRegion = new PDNode();
 			loopRegion.setLineOfCode(0);
 			loopRegion.setCode("LOOP");
-			cdg.addVertex(loopRegion);
-			cdg.addEdge(new Edge<>(whileNode, new CDEdge(CDEdge.Type.TRUE), loopRegion));
+			currentCdg.addVertex(loopRegion);
+			currentCdg.addEdge(new Edge<>(whileNode, new CDEdge(CDEdge.Type.TRUE), loopRegion));
 			//
 			pushLoopBlockDep(loopRegion);
 			visit(ctx.statement());
@@ -388,17 +421,17 @@ public class JavaCDGBuilder {
 					thenRegion = new PDNode();
 					thenRegion.setLineOfCode(0);
 					thenRegion.setCode("THEN");
-					cdg.addVertex(thenRegion);
-					cdg.addEdge(new Edge<>(lastCase, new CDEdge(CDEdge.Type.TRUE), thenRegion));
+					currentCdg.addVertex(thenRegion);
+					currentCdg.addEdge(new Edge<>(lastCase, new CDEdge(CDEdge.Type.TRUE), thenRegion));
 				}
 				//
 				for (JavaParser.SwitchLabelContext ctx : cases.subList(1, cases.size())) {
 					PDNode nextCase = new PDNode();
 					nextCase.setLineOfCode(ctx.getStart().getLine());
 					nextCase.setCode(getOriginalCodeText(ctx));
-					cdg.addVertex(nextCase);
-					cdg.addEdge(new Edge<>(lastCase, new CDEdge(CDEdge.Type.FALSE), nextCase));
-					cdg.addEdge(new Edge<>(nextCase, new CDEdge(CDEdge.Type.TRUE), thenRegion));
+					currentCdg.addVertex(nextCase);
+					currentCdg.addEdge(new Edge<>(lastCase, new CDEdge(CDEdge.Type.FALSE), nextCase));
+					currentCdg.addEdge(new Edge<>(nextCase, new CDEdge(CDEdge.Type.TRUE), thenRegion));
 					lastCase = nextCase;
 				}
 				//
@@ -406,7 +439,7 @@ public class JavaCDGBuilder {
 					PDNode elseRegion = new PDNode();
 					elseRegion.setLineOfCode(0);
 					elseRegion.setCode("ELSE");
-					cdg.addVertex(elseRegion); // We have to add the ELSE here, just 
+					currentCdg.addVertex(elseRegion); // We have to add the ELSE here, just
 					//                            in case it is needed in the following.
 					pushCtrlDep(thenRegion);
 					negDeps.push(elseRegion);
@@ -417,10 +450,10 @@ public class JavaCDGBuilder {
 					//
 					if (buildRegion) {
 						// there was a 'break', so we need to keep the ELSE region
-						cdg.addEdge(new Edge<>(lastCase, new CDEdge(CDEdge.Type.FALSE), elseRegion));
-					} else if (cdg.getOutDegree(elseRegion) == 0)
+						currentCdg.addEdge(new Edge<>(lastCase, new CDEdge(CDEdge.Type.FALSE), elseRegion));
+					} else if (currentCdg.getOutDegree(elseRegion) == 0)
 						// the ELSE region is not needed, so we remove it
-						cdg.removeVertex(elseRegion);
+						currentCdg.removeVertex(elseRegion);
 				}
 			}
 			return null;
@@ -556,8 +589,8 @@ public class JavaCDGBuilder {
 					catchNode = new PDNode();
 					catchNode.setLineOfCode(cx.getStart().getLine());
 					catchNode.setCode("catch (" + cx.catchType().getText() + " " + cx.Identifier().getText() + ")");
-					cdg.addVertex(catchNode);
-					cdg.addEdge(new Edge<>(tryRegion, new CDEdge(CDEdge.Type.THROWS), catchNode));
+					currentCdg.addVertex(catchNode);
+					currentCdg.addEdge(new Edge<>(tryRegion, new CDEdge(CDEdge.Type.THROWS), catchNode));
 					pushCtrlDep(catchNode);
 					visit(cx.block());
 					popCtrlDep(catchNode);
@@ -611,8 +644,8 @@ public class JavaCDGBuilder {
 					catchNode = new PDNode();
 					catchNode.setLineOfCode(cx.getStart().getLine());
 					catchNode.setCode("catch (" + cx.catchType().getText() + " " + cx.Identifier().getText() + ")");
-					cdg.addVertex(catchNode);
-					cdg.addEdge(new Edge<>(tryRegion, new CDEdge(CDEdge.Type.THROWS), catchNode));
+					currentCdg.addVertex(catchNode);
+					currentCdg.addEdge(new Edge<>(tryRegion, new CDEdge(CDEdge.Type.THROWS), catchNode));
 					pushCtrlDep(catchNode);
 					visit(cx.block());
 					popCtrlDep(catchNode);
@@ -641,8 +674,8 @@ public class JavaCDGBuilder {
 		 */
 		private void addNodeEdge(PDNode node) {
 			checkBuildFollowRegion();
-			cdg.addVertex(node);
-			cdg.addEdge(new Edge<>(ctrlDeps.peek(), new CDEdge(CDEdge.Type.EPSILON), node));
+			currentCdg.addVertex(node);
+			currentCdg.addEdge(new Edge<>(ctrlDeps.peek(), new CDEdge(CDEdge.Type.EPSILON), node));
 		}
 
 		/**
@@ -656,7 +689,7 @@ public class JavaCDGBuilder {
 				PDNode followRegion = new PDNode();
 				followRegion.setLineOfCode(0);
 				followRegion.setCode("FOLLOW-" + regionCounter++);
-				cdg.addVertex(followRegion);
+				currentCdg.addVertex(followRegion);
 				// check to see if there are any exit-jumps in the current chain
 				followRegion.setProperty("isJump", Boolean.TRUE);
 				for (PDNode dep: jumpDeps)
@@ -669,14 +702,14 @@ public class JavaCDGBuilder {
 				// connect the follow-region
 				if (Boolean.TRUE.equals(jumpDeps.peek().getProperty("isTry"))) {
 					PDNode jmpDep = jumpDeps.pop();
-					if (!cdg.containsVertex(jmpDep))
-						cdg.addVertex(jmpDep);
-					cdg.addEdge(new Edge<>(jmpDep, new CDEdge(CDEdge.Type.NOT_THROWS), followRegion));
+					if (!currentCdg.containsVertex(jmpDep))
+						currentCdg.addVertex(jmpDep);
+					currentCdg.addEdge(new Edge<>(jmpDep, new CDEdge(CDEdge.Type.NOT_THROWS), followRegion));
 				} else {
 					PDNode jmpDep = jumpDeps.pop();
-					if (!cdg.containsVertex(jmpDep))
-						cdg.addVertex(jmpDep);
-					cdg.addEdge(new Edge<>(jmpDep, new CDEdge(CDEdge.Type.EPSILON), followRegion));
+					if (!currentCdg.containsVertex(jmpDep))
+						currentCdg.addVertex(jmpDep);
+					currentCdg.addEdge(new Edge<>(jmpDep, new CDEdge(CDEdge.Type.EPSILON), followRegion));
 				}
 				// if the jump-chain is not empty, remove all non-exit jumps
 				if (!jumpDeps.isEmpty()) {

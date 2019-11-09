@@ -3,6 +3,9 @@ package ghaffarian.progex.java;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import ghaffarian.progex.graphs.pdg.ControlDependenceGraph;
 import ghaffarian.progex.graphs.pdg.DataDependenceGraph;
 import ghaffarian.progex.graphs.pdg.ProgramDependeceGraph;
@@ -30,11 +33,10 @@ public class JavaPDGBuilder {
 	 * Builds and returns Program Dependence Graphs (PDG) for each given Java file.
 	 */
 	public static ProgramDependeceGraph[] buildForAll(File[] javaFiles) throws IOException {
-		
-		ControlDependenceGraph[] ctrlSubgraphs;
-		ctrlSubgraphs = new ControlDependenceGraph[javaFiles.length];
+
+		List<List<ControlDependenceGraph>> ctrlSubgraphs = new ArrayList<>();
 		for (int i = 0; i < javaFiles.length; ++i)
-			ctrlSubgraphs[i] = JavaCDGBuilder.build(javaFiles[i]);
+			ctrlSubgraphs.add(JavaCDGBuilder.build(javaFiles[i]));
         //
 		DataDependenceGraph[] dataSubgraphs;
 		dataSubgraphs = JavaDDGBuilder.buildForAll(javaFiles);
@@ -43,7 +45,7 @@ public class JavaPDGBuilder {
 		ProgramDependeceGraph[] pdgArray = new ProgramDependeceGraph[javaFiles.length];
 		for (int i = 0; i < javaFiles.length; ++i) {
 			pdgArray[i] = new ProgramDependeceGraph(javaFiles[i].getName(), 
-					ctrlSubgraphs[i], dataSubgraphs[i]);
+					ctrlSubgraphs.get(i), dataSubgraphs[i]);
 		}
 		
 		return pdgArray;

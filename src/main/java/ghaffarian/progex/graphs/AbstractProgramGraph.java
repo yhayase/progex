@@ -10,7 +10,7 @@ import java.io.IOException;
  * @author Seyed Mohammad Ghaffarian
  */
 public abstract class AbstractProgramGraph<N, E> extends Digraph<N, E>  {
-    
+
     /**
      * Default constructor.
      */
