@@ -56,7 +56,7 @@ public class JavaCDGBuilder {
 		private final String fileName;
 		private final List<ControlDependenceGraph> cdgList;
 
-		private Stack<ControlDependenceGraph> cdgStack;
+		// private Stack<ControlDependenceGraph> cdgStack;
 
 		private final Deque<PDNode> ctrlDeps;
 		private final Deque<PDNode> negDeps;
@@ -78,7 +78,6 @@ public class JavaCDGBuilder {
 			jmpCounts = new ArrayDeque<>();
 
 			currentCdg = null;
-			cdgStack = new Stack<>();
 			buildRegion = false;
 			follows = true;
 			lastFollowDepth = 0;
@@ -87,82 +86,109 @@ public class JavaCDGBuilder {
 		}
 
 		private void prepareForCommit(String fileName, int line, int charPositionInLine, String name, ControlDependenceGraph.Type type) {
-			cdgStack.push(currentCdg);
 			currentCdg = new ControlDependenceGraph(fileName, line, charPositionInLine, name, type);
 
-			ctrlDeps.clear();
-			negDeps.clear();
-			jumpDeps.clear();
-			jmpCounts.clear();
-			buildRegion = false;
-			follows = true;
-			lastFollowDepth = 0;
-			regionCounter = 1;
-			jmpCounter = 0;
+			assert ctrlDeps.isEmpty(); //ctrlDeps.clear();
+			assert negDeps.isEmpty(); //negDeps.clear();
+			assert jumpDeps.isEmpty(); //jumpDeps.clear();
+			assert jmpCounts.isEmpty(); //jmpCounts.clear();
+			assert buildRegion==false; //buildRegion = false;
+			assert follows==true; //follows = true;
+			assert lastFollowDepth==0; //lastFollowDepth = 0;
+			assert regionCounter==1; //regionCounter = 1;
+			assert jmpCounter==0; //jmpCounter = 0;
 		}
+
+		/*
 		private void commit() {
 			assert currentCdg != null;
 			assert !cdgStack.isEmpty();
 
 			cdgList.add(currentCdg);
-			currentCdg = cdgStack.pop();
+			currentCdg = null;
+		}
+		*/
+
+		@Override
+		public Void visitClassDeclaration(JavaParser.ClassDeclarationContext ctx) {
+			// classBodyDeclaration :  ';'  |  'static'? block  |  modifier* memberDeclaration
+			if (currentCdg != null) {
+				ControlDependencyVisitor cdv = new ControlDependencyVisitor(fileName);
+				cdv.visitClassDeclaration(ctx);
+
+				cdgList.addAll(cdv.cdgList);
+				if (cdv.currentCdg != null && cdv.currentCdg.vertexCount()!=0) {
+					// the class initializer cdv.currentCdg is trivial if no vertices exist.
+					cdgList.add(cdv.currentCdg);
+				}
+
+				return null;
+			}
+
+			prepareForCommit(fileName, ctx.start.getLine(), ctx.start.getCharPositionInLine(), ctx.Identifier().getText(), ControlDependenceGraph.Type.STATIC_INITIALIZER);
+			return visitChildren(ctx);
 		}
 
 		@Override
 		public Void visitClassBodyDeclaration(JavaParser.ClassBodyDeclarationContext ctx) {
 			// classBodyDeclaration :  ';'  |  'static'? block  |  modifier* memberDeclaration
+			assert currentCdg!=null; //currentCdg must have been prepared at visitClassDeclaration(ctx)
+
 			if (ctx.block() != null) {
-				prepareForCommit(fileName, ctx.start.getLine(), ctx.start.getCharPositionInLine(), "<empty>", ControlDependenceGraph.Type.STATIC_INITIALIZER);
-
-				try {
-					PDNode block = new PDNode();
-					if (ctx.getChildCount() == 2 && ctx.getChild(0).getText().equals("static")) {
-						block.setLineOfCode(ctx.getStart().getLine());
-						block.setCode("static");
-					} else {
-						block.setLineOfCode(0);
-						block.setCode("block");
-					}
-					currentCdg.addVertex(block);
-					pushCtrlDep(block);
-					visit(ctx.block());
-					//
-					PDNode exit = new PDNode();
-					exit.setLineOfCode(0);
-					exit.setCode("exit");
-					currentCdg.addVertex(exit);
-					currentCdg.addEdge(new Edge<>(block, new CDEdge(CDEdge.Type.EPSILON), exit));
-					return null;
-				} finally {
-					commit();
+				PDNode block = new PDNode();
+				if (ctx.getChildCount() == 2 && ctx.getChild(0).getText().equals("static")) {
+					block.setLineOfCode(ctx.getStart().getLine());
+					block.setCode("static");
+				} else {
+					block.setLineOfCode(0);
+					block.setCode("block");
 				}
-			} else
-				return visitChildren(ctx);
-		}
-
-		@Override
-		public Void visitConstructorDeclaration(JavaParser.ConstructorDeclarationContext ctx) {
-			// Identifier formalParameters ('throws' qualifiedNameList)?  constructorBody
-			prepareForCommit(fileName, ctx.start.getLine(), ctx.start.getCharPositionInLine(), ctx.Identifier().getText()+".$<init>", ControlDependenceGraph.Type.CONSTRUCTOR);
-			//
-			try {
-				PDNode entry = new PDNode();
-				entry.setLineOfCode(ctx.getStart().getLine());
-				entry.setCode(ctx.Identifier().getText() + ' ' + getOriginalCodeText(ctx.formalParameters()));
-				currentCdg.addVertex(entry);
-				//
-				pushCtrlDep(entry);
-				visit(ctx.constructorBody());
+				currentCdg.addVertex(block);
+				pushCtrlDep(block);
+				visit(ctx.block());
 				//
 				PDNode exit = new PDNode();
 				exit.setLineOfCode(0);
 				exit.setCode("exit");
 				currentCdg.addVertex(exit);
-				currentCdg.addEdge(new Edge<>(entry, new CDEdge(CDEdge.Type.EPSILON), exit));
+				currentCdg.addEdge(new Edge<>(block, new CDEdge(CDEdge.Type.EPSILON), exit));
 				return null;
-			} finally {
-				commit();
+			} else {
+				return visitChildren(ctx);
 			}
+		}
+
+		@Override
+		public Void visitConstructorDeclaration(JavaParser.ConstructorDeclarationContext ctx) {
+			if (currentCdg != null) {
+				ControlDependencyVisitor cdv = new ControlDependencyVisitor(fileName);
+				cdv.visitConstructorDeclaration(ctx);
+
+				cdgList.addAll(cdv.cdgList);
+				if (cdv.currentCdg != null) {
+					cdgList.add(cdv.currentCdg);
+				}
+
+				return null;
+			}
+
+			// Identifier formalParameters ('throws' qualifiedNameList)?  constructorBody
+			prepareForCommit(fileName, ctx.start.getLine(), ctx.start.getCharPositionInLine(), ctx.Identifier().getText()+".$<init>", ControlDependenceGraph.Type.CONSTRUCTOR);
+			//
+			PDNode entry = new PDNode();
+			entry.setLineOfCode(ctx.getStart().getLine());
+			entry.setCode(ctx.Identifier().getText() + ' ' + getOriginalCodeText(ctx.formalParameters()));
+			currentCdg.addVertex(entry);
+			//
+			pushCtrlDep(entry);
+			visit(ctx.constructorBody());
+			//
+			PDNode exit = new PDNode();
+			exit.setLineOfCode(0);
+			exit.setCode("exit");
+			currentCdg.addVertex(exit);
+			currentCdg.addEdge(new Edge<>(entry, new CDEdge(CDEdge.Type.EPSILON), exit));
+			return null;
 		}
 
 		@Override
@@ -170,33 +196,41 @@ public class JavaCDGBuilder {
 			// methodDeclaration :
 			//   (typeType|'void') Identifier formalParameters ('[' ']')*
 			//     ('throws' qualifiedNameList)?  ( methodBody | ';' )
+			if (currentCdg != null) {
+				ControlDependencyVisitor cdv = new ControlDependencyVisitor(fileName);
+				cdv.visitMethodDeclaration(ctx);
+
+				cdgList.addAll(cdv.cdgList);
+				if (cdv.currentCdg != null) {
+					cdgList.add(cdv.currentCdg);
+				}
+
+				return null;
+			}
+
 			prepareForCommit(fileName, ctx.start.getLine(), ctx.start.getCharPositionInLine(), ctx.Identifier().getText(), ControlDependenceGraph.Type.INSTANCE_METHOD); //TODO: Must recognize static or not
 			//
-			try {
-				PDNode entry = new PDNode();
-				entry.setLineOfCode(ctx.getStart().getLine());
-				String retType;
-				if (ctx.typeType() == null)
-					retType = "void";
-				else
-					retType = getOriginalCodeText(ctx.typeType());
-				String args = getOriginalCodeText(ctx.formalParameters());
-				entry.setCode(retType + " " + ctx.Identifier() + args);
-				currentCdg.addVertex(entry);
-				//
-				pushCtrlDep(entry);
-				if (ctx.methodBody() != null)
-					visit(ctx.methodBody());
-				//
-				PDNode exit = new PDNode();
-				exit.setLineOfCode(0);
-				exit.setCode("exit");
-				currentCdg.addVertex(exit);
-				currentCdg.addEdge(new Edge<>(entry, new CDEdge(CDEdge.Type.EPSILON), exit));
-				return null;
-			} finally {
-				commit();
-			}
+			PDNode entry = new PDNode();
+			entry.setLineOfCode(ctx.getStart().getLine());
+			String retType;
+			if (ctx.typeType() == null)
+				retType = "void";
+			else
+				retType = getOriginalCodeText(ctx.typeType());
+			String args = getOriginalCodeText(ctx.formalParameters());
+			entry.setCode(retType + " " + ctx.Identifier() + args);
+			currentCdg.addVertex(entry);
+			//
+			pushCtrlDep(entry);
+			if (ctx.methodBody() != null)
+				visit(ctx.methodBody());
+			//
+			PDNode exit = new PDNode();
+			exit.setLineOfCode(0);
+			exit.setCode("exit");
+			currentCdg.addVertex(exit);
+			currentCdg.addEdge(new Edge<>(entry, new CDEdge(CDEdge.Type.EPSILON), exit));
+			return null;
 		}
 
 		@Override
