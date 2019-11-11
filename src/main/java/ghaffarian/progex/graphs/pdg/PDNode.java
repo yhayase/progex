@@ -1,10 +1,9 @@
 /*** In The Name of Allah ***/
 package ghaffarian.progex.graphs.pdg;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import org.antlr.v4.runtime.ParserRuleContext;
+
+import java.util.*;
 
 /**
  * Class type of PDG nodes.
@@ -15,7 +14,8 @@ public class PDNode {
 
 	private Map<String, Object> properties;
 	private Set<String> DEFs, USEs, selfFlows;
-	
+	private List<ParserRuleContext> astNodeList = Collections.emptyList();
+
 	public PDNode() {
 		DEFs = new HashSet<>();
 		USEs = new HashSet<>();
@@ -31,14 +31,26 @@ public class PDNode {
 		return (Integer) properties.get("line");
 	}
 	
-	public void setCode(String code) {
+	public void setCodeStr(String code) {
 		properties.put("code", code);
 	}
 	
-	public String getCode() {
+	public String getCodeStr() {
 		return (String) properties.get("code");
 	}
-	
+
+	public void setASTNodeList(List<ParserRuleContext> astNodeList) {
+		this.astNodeList = astNodeList;
+	}
+
+	public void setASTNodeList(ParserRuleContext ... astNodeArray) {
+		setASTNodeList(List.of(astNodeArray));
+	}
+
+	public List<ParserRuleContext> getASTNodeList() {
+		return this.astNodeList;
+	}
+
 	public boolean addDEF(String var) {
 		return DEFs.add(var);
 	}

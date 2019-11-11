@@ -720,7 +720,8 @@ public class JavaDDGBuilder {
 			if (iteration == 1) {
 				entry = new PDNode();
 				entry.setLineOfCode(ctx.getStart().getLine());
-				entry.setCode(ctx.Identifier().getText() + ' ' + getOriginalCodeText(ctx.formalParameters()));
+				entry.setCodeStr(ctx.Identifier().getText() + ' ' + getOriginalCodeText(ctx.formalParameters()));
+				entry.setASTNodeList(ctx.formalParameters());
 				entry.setProperty("name", ctx.Identifier().getText());
 				ddg.addVertex(entry);
 				pdNodes.put(ctx, entry);
@@ -800,7 +801,8 @@ public class JavaDDGBuilder {
 				if (ctx.typeType() != null)
 					retType = ctx.typeType().getText();
 				String args = getOriginalCodeText(ctx.formalParameters());
-				entry.setCode(retType + " " + ctx.Identifier().getText() + args);
+				entry.setCodeStr(retType + " " + ctx.Identifier().getText() + args);
+				entry.setASTNodeList(ctx.formalParameters());
 				entry.setProperty("name", ctx.Identifier().getText());
 				entry.setProperty("type", retType);
 				ddg.addVertex(entry);
@@ -887,7 +889,8 @@ public class JavaDDGBuilder {
 			if (iteration == 1) {
 				declr = new PDNode();
 				declr.setLineOfCode(ctx.getStart().getLine());
-				declr.setCode(getOriginalCodeText(ctx));
+				declr.setCodeStr(getOriginalCodeText(ctx));
+				declr.setASTNodeList(ctx);
 				ddg.addVertex(declr);
 				pdNodes.put(ctx, declr);
 			} else 
@@ -927,7 +930,8 @@ public class JavaDDGBuilder {
 			if (iteration == 1) {
 				expr = new PDNode();
 				expr.setLineOfCode(ctx.getStart().getLine());
-				expr.setCode(getOriginalCodeText(ctx));
+				expr.setCodeStr(getOriginalCodeText(ctx));
+				expr.setASTNodeList(ctx);
 				ddg.addVertex(expr);
 				pdNodes.put(ctx, expr);
 			} else 
@@ -945,7 +949,8 @@ public class JavaDDGBuilder {
 			if (iteration == 1) {
 				ifNode = new PDNode();
 				ifNode.setLineOfCode(ctx.getStart().getLine());
-				ifNode.setCode("if " + getOriginalCodeText(ctx.parExpression()));
+				ifNode.setCodeStr("if " + getOriginalCodeText(ctx.parExpression()));
+				ifNode.setASTNodeList(ctx.parExpression());
 				ddg.addVertex(ifNode);
 				pdNodes.put(ctx, ifNode);
 			} else 
@@ -972,7 +977,8 @@ public class JavaDDGBuilder {
 				if (iteration == 1) {
 					forExpr = new PDNode();
 					forExpr.setLineOfCode(ctx.forControl().getStart().getLine());
-					forExpr.setCode("for (" + getOriginalCodeText(ctx.forControl()) + ")");
+					forExpr.setCodeStr("for (" + getOriginalCodeText(ctx.forControl()) + ")");
+					forExpr.setASTNodeList(ctx.forControl());
 					ddg.addVertex(forExpr);
 					pdNodes.put(ctx.forControl().enhancedForControl(), forExpr);
 				} else 
@@ -992,7 +998,8 @@ public class JavaDDGBuilder {
 					if (iteration == 1) {
 						forInit = new PDNode();
 						forInit.setLineOfCode(ctx.forControl().forInit().getStart().getLine());
-						forInit.setCode(getOriginalCodeText(ctx.forControl().forInit()));
+						forInit.setCodeStr(getOriginalCodeText(ctx.forControl().forInit()));
+						forInit.setASTNodeList(ctx.forControl().forInit());
 						ddg.addVertex(forInit);
 						pdNodes.put(ctx.forControl().forInit(), forInit);
 					} else 
@@ -1010,7 +1017,8 @@ public class JavaDDGBuilder {
 					if (iteration == 1) {
 						forExpr = new PDNode();
 						forExpr.setLineOfCode(ctx.forControl().expression().getStart().getLine());
-						forExpr.setCode("for (" + getOriginalCodeText(ctx.forControl().expression()) + ")");
+						forExpr.setCodeStr("for (" + getOriginalCodeText(ctx.forControl().expression()) + ")");
+						forExpr.setASTNodeList(ctx.forControl().expression());
 						ddg.addVertex(forExpr);
 						pdNodes.put(ctx.forControl().expression(), forExpr);
 					} else 
@@ -1024,7 +1032,8 @@ public class JavaDDGBuilder {
 					PDNode forUpdate;
 					if (iteration == 1) {
 						forUpdate = new PDNode();
-						forUpdate.setCode(getOriginalCodeText(ctx.forControl().forUpdate()));
+						forUpdate.setCodeStr(getOriginalCodeText(ctx.forControl().forUpdate()));
+						forUpdate.setASTNodeList(ctx.forControl().forUpdate());
 						forUpdate.setLineOfCode(ctx.forControl().forUpdate().getStart().getLine());
 						ddg.addVertex(forUpdate);
 						pdNodes.put(ctx.forControl().forUpdate(), forUpdate);
@@ -1050,7 +1059,8 @@ public class JavaDDGBuilder {
 			if (iteration == 1) {
 				whileNode = new PDNode();
 				whileNode.setLineOfCode(ctx.getStart().getLine());
-				whileNode.setCode("while " + getOriginalCodeText(ctx.parExpression()));
+				whileNode.setCodeStr("while " + getOriginalCodeText(ctx.parExpression()));
+				whileNode.setASTNodeList(ctx.parExpression());
 				ddg.addVertex(whileNode);
 				pdNodes.put(ctx, whileNode);
 			} else
@@ -1071,7 +1081,8 @@ public class JavaDDGBuilder {
 			if (iteration == 1) {
 				whileNode = new PDNode();
 				whileNode.setLineOfCode(ctx.parExpression().getStart().getLine());
-				whileNode.setCode("while " + getOriginalCodeText(ctx.parExpression()));
+				whileNode.setCodeStr("while " + getOriginalCodeText(ctx.parExpression()));
+				whileNode.setASTNodeList(ctx.parExpression());
 				ddg.addVertex(whileNode);
 				pdNodes.put(ctx, whileNode);
 			} else
@@ -1090,7 +1101,8 @@ public class JavaDDGBuilder {
 			if (iteration == 1) {
 				switchNode = new PDNode();
 				switchNode.setLineOfCode(ctx.getStart().getLine());
-				switchNode.setCode("switch " + getOriginalCodeText(ctx.parExpression()));
+				switchNode.setCodeStr("switch " + getOriginalCodeText(ctx.parExpression()));
+				switchNode.setASTNodeList(ctx.parExpression());
 				ddg.addVertex(switchNode);
 				pdNodes.put(ctx, switchNode);
 			} else
@@ -1113,7 +1125,8 @@ public class JavaDDGBuilder {
 			if (iteration == 1) {
 				ret = new PDNode();
 				ret.setLineOfCode(ctx.getStart().getLine());
-				ret.setCode(getOriginalCodeText(ctx));
+				ret.setCodeStr(getOriginalCodeText(ctx));
+				ret.setASTNodeList(ctx);
 				ddg.addVertex(ret);
 				pdNodes.put(ctx, ret);
 			} else
@@ -1132,7 +1145,8 @@ public class JavaDDGBuilder {
 			if (iteration == 1) {
 				syncStmt = new PDNode();
 				syncStmt.setLineOfCode(ctx.getStart().getLine());
-				syncStmt.setCode("synchronized " + getOriginalCodeText(ctx.parExpression()));
+				syncStmt.setCodeStr("synchronized " + getOriginalCodeText(ctx.parExpression()));
+				syncStmt.setASTNodeList(ctx.parExpression());
 				ddg.addVertex(syncStmt);
 				pdNodes.put(ctx, syncStmt);
 			} else 
@@ -1151,7 +1165,8 @@ public class JavaDDGBuilder {
 			if (iteration == 1) {
 				throwNode = new PDNode();
 				throwNode.setLineOfCode(ctx.getStart().getLine());
-				throwNode.setCode("throw " + getOriginalCodeText(ctx.expression()));
+				throwNode.setCodeStr("throw " + getOriginalCodeText(ctx.expression()));
+				throwNode.setASTNodeList(ctx);
 				ddg.addVertex(throwNode);
 				pdNodes.put(ctx, throwNode);
 			} else
@@ -1179,7 +1194,9 @@ public class JavaDDGBuilder {
 					if (iteration == 1) {
 						catchNode = new PDNode();
 						catchNode.setLineOfCode(cx.getStart().getLine());
-						catchNode.setCode("catch (" + cx.catchType().getText() + " " + cx.Identifier().getText() + ")");
+						catchNode.setCodeStr("catch (" + cx.catchType().getText() + " " + cx.Identifier().getText() + ")");
+						catchNode.setASTNodeList(cx.catchType());
+						catchNode.setProperty("name", cx.Identifier().getText());
 						ddg.addVertex(catchNode);
 						pdNodes.put(cx, catchNode);
 					} else 
@@ -1217,7 +1234,8 @@ public class JavaDDGBuilder {
 				if (iteration == 1) {
 					resource = new PDNode();
 					resource.setLineOfCode(rsrx.getStart().getLine());
-					resource.setCode(getOriginalCodeText(rsrx));
+					resource.setCodeStr(getOriginalCodeText(rsrx));
+					resource.setASTNodeList(rsrx);
 					ddg.addVertex(resource);
 					pdNodes.put(rsrx, resource);
 				} else {
@@ -1245,7 +1263,9 @@ public class JavaDDGBuilder {
 					if (iteration == 1) {
 						catchNode = new PDNode();
 						catchNode.setLineOfCode(cx.getStart().getLine());
-						catchNode.setCode("catch (" + cx.catchType().getText() + " " + cx.Identifier().getText() + ")");
+						catchNode.setCodeStr("catch (" + cx.catchType().getText() + " " + cx.Identifier().getText() + ")");
+						catchNode.setASTNodeList(cx.catchType());
+						catchNode.setProperty("name", cx.Identifier().getText());
 						ddg.addVertex(catchNode);
 						pdNodes.put(cx, catchNode);
 					} else 

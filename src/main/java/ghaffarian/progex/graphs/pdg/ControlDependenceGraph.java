@@ -8,11 +8,14 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import ghaffarian.progex.java.JavaCDGBuilder;
 import ghaffarian.progex.utils.StringUtils;
 import ghaffarian.nanologger.Logger;
 import ghaffarian.progex.graphs.AbstractProgramGraph;
 import java.io.IOException;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 /**
  * Control Dependence Graph.
@@ -49,7 +52,7 @@ public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge>
 				StringBuilder label = new StringBuilder("  [label=\"");
 				if (node.getLineOfCode() > 0)
 					label.append(node.getLineOfCode()).append(":  ");
-				label.append(StringUtils.escape(node.getCode())).append("\"];");
+				label.append(StringUtils.escape(node.getCodeStr())).append("\"];");
 				dot.println("  " + name + label.toString());
 			}
 			dot.println("  // graph-edges");
@@ -95,7 +98,7 @@ public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge>
 				gml.println("  node [");
 				gml.println("    id " + nodeCounter);
 				gml.println("    line " + node.getLineOfCode());
-				gml.println("    label \"" + StringUtils.escape(node.getCode()) + "\"");
+				gml.println("    label \"" + StringUtils.escape(node.getCodeStr()) + "\"");
 				gml.println("  ]");
 				nodeIDs.put(node, nodeCounter);
 				++nodeCounter;
@@ -146,8 +149,9 @@ public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge>
 				json.println("    {");
 				json.println("      \"id\": " + nodeCounter + ",");
 				json.println("      \"line\": " + node.getLineOfCode() + ",");
-				json.println("      \"label\": \"" + StringUtils.escape(node.getCode()) + "\"");
+				json.println("      \"ast\": [" + node.getASTNodeList().stream().map(astNode -> "\"" + StringUtils.escapeDoubleQuotes(JavaCDGBuilder.getOriginalCodeText(astNode)) + "\"").collect(Collectors.joining(",")) + "],");
 				nodeIDs.put(node, nodeCounter);
+				json.println("      \"label\": \"" + StringUtils.escape(node.getCodeStr()) + "\"");
 				++nodeCounter;
                 if (nodeCounter == allVertices.size())
                     json.println("    }");

@@ -6,10 +6,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
+
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -96,10 +94,10 @@ public class JavaCDGBuilder {
 				PDNode block = new PDNode();
 				if (ctx.getChildCount() == 2 && ctx.getChild(0).getText().equals("static")) {
 					block.setLineOfCode(ctx.getStart().getLine());
-					block.setCode("static");
+					block.setCodeStr("static");
 				} else {
 					block.setLineOfCode(0);
-					block.setCode("block");
+					block.setCodeStr("block");
 				}
 				cdg.addVertex(block);
 				pushCtrlDep(block);
@@ -107,7 +105,7 @@ public class JavaCDGBuilder {
 				//
 				PDNode exit = new PDNode();
 				exit.setLineOfCode(0);
-				exit.setCode("exit");
+				exit.setCodeStr("exit");
 				cdg.addVertex(exit);
 				cdg.addEdge(new Edge<>(block, new CDEdge(CDEdge.Type.EPSILON), exit));
 				return null;
@@ -122,7 +120,9 @@ public class JavaCDGBuilder {
 			//
 			PDNode entry = new PDNode();
 			entry.setLineOfCode(ctx.getStart().getLine());
-			entry.setCode(ctx.Identifier().getText() + ' ' + getOriginalCodeText(ctx.formalParameters()));
+			entry.setCodeStr(ctx.Identifier().getText() + ' ' + getOriginalCodeText(ctx.formalParameters()));
+			entry.setASTNodeList(ctx.formalParameters());
+			entry.setProperty("name", ctx.Identifier().getText());
 			cdg.addVertex(entry);
 			//
 			pushCtrlDep(entry);
@@ -130,7 +130,7 @@ public class JavaCDGBuilder {
 			//
 			PDNode exit = new PDNode();
 			exit.setLineOfCode(0);
-			exit.setCode("exit");
+			exit.setCodeStr("exit");
 			cdg.addVertex(exit);
 			cdg.addEdge(new Edge<>(entry, new CDEdge(CDEdge.Type.EPSILON), exit));
 			return null;
@@ -151,7 +151,10 @@ public class JavaCDGBuilder {
 			else
 				retType = getOriginalCodeText(ctx.typeType());
 			String args = getOriginalCodeText(ctx.formalParameters());
-			entry.setCode(retType + " " + ctx.Identifier() + args);
+			entry.setCodeStr(retType + " " + ctx.Identifier() + args);
+			entry.setASTNodeList(ctx.formalParameters()); //entry.setASTNodeList(ctx.typeType(), ctx.formalParameters());
+			entry.setProperty("name", ctx.Identifier().getText());
+			entry.setProperty("type", retType);
 			cdg.addVertex(entry);
 			//
 			pushCtrlDep(entry);
@@ -160,7 +163,7 @@ public class JavaCDGBuilder {
 			//
 			PDNode exit = new PDNode();
 			exit.setLineOfCode(0);
-			exit.setCode("exit");
+			exit.setCodeStr("exit");
 			cdg.addVertex(exit);
 			cdg.addEdge(new Edge<>(entry, new CDEdge(CDEdge.Type.EPSILON), exit));
 			return null;
@@ -171,8 +174,9 @@ public class JavaCDGBuilder {
 			// statementExpression ';'
 			PDNode expr = new PDNode();
 			expr.setLineOfCode(ctx.getStart().getLine());
-			expr.setCode(getOriginalCodeText(ctx));
-			Logger.debug(expr.getLineOfCode() + ": " + expr.getCode());
+			expr.setCodeStr(getOriginalCodeText(ctx));
+			expr.setASTNodeList(ctx);
+			Logger.debug(expr.getLineOfCode() + ": " + expr.getCodeStr());
 			addNodeEdge(expr);
 			return null;
 		}
@@ -182,7 +186,8 @@ public class JavaCDGBuilder {
 			// localVariableDeclaration :  variableModifier* typeType variableDeclarators
 			PDNode varDec = new PDNode();
 			varDec.setLineOfCode(ctx.getStart().getLine());
-			varDec.setCode(getOriginalCodeText(ctx));
+			varDec.setCodeStr(getOriginalCodeText(ctx));
+			varDec.setASTNodeList(ctx);
 			addNodeEdge(varDec);
 			return null;
 		}
@@ -192,18 +197,19 @@ public class JavaCDGBuilder {
 			// 'if' parExpression statement ('else' statement)?
 			PDNode ifNode = new PDNode();
 			ifNode.setLineOfCode(ctx.getStart().getLine());
-			ifNode.setCode("if " + getOriginalCodeText(ctx.parExpression()));
+			ifNode.setCodeStr("if " + getOriginalCodeText(ctx.parExpression()));
+			ifNode.setASTNodeList(ctx.parExpression());
 			addNodeEdge(ifNode);
 			//
 			PDNode thenRegion = new PDNode();
 			thenRegion.setLineOfCode(0);
-			thenRegion.setCode("THEN");
+			thenRegion.setCodeStr("THEN");
 			cdg.addVertex(thenRegion);
 			cdg.addEdge(new Edge<>(ifNode, new CDEdge(CDEdge.Type.TRUE), thenRegion));
 			//
 			PDNode elseRegion = new PDNode();
 			elseRegion.setLineOfCode(0);
-			elseRegion.setCode("ELSE");
+			elseRegion.setCodeStr("ELSE");
 			//
 			pushCtrlDep(thenRegion);
 			negDeps.push(elseRegion);
@@ -240,12 +246,13 @@ public class JavaCDGBuilder {
 				//     variableModifier* typeType variableDeclaratorId ':' expression
 				PDNode forExpr = new PDNode();
 				forExpr.setLineOfCode(ctx.forControl().getStart().getLine());
-				forExpr.setCode("for (" + getOriginalCodeText(ctx.forControl()) + ")");
+				forExpr.setCodeStr("for (" + getOriginalCodeText(ctx.forControl()) + ")");
+				forExpr.setASTNodeList(ctx.forControl());
 				addNodeEdge(forExpr);
 				//
 				PDNode loopRegion = new PDNode();
 				loopRegion.setLineOfCode(0);
-				loopRegion.setCode("LOOP");
+				loopRegion.setCodeStr("LOOP");
 				cdg.addVertex(loopRegion);
 				cdg.addEdge(new Edge<>(forExpr, new CDEdge(CDEdge.Type.TRUE), loopRegion));
 				//
@@ -260,10 +267,12 @@ public class JavaCDGBuilder {
 				if (ctx.forControl().forInit() != null) { // non-empty init
 					forInit = new PDNode();
 					forInit.setLineOfCode(ctx.forControl().forInit().getStart().getLine());
-					forInit.setCode(getOriginalCodeText(ctx.forControl().forInit()));
+					forInit.setCodeStr(getOriginalCodeText(ctx.forControl().forInit()));
+					forInit.setASTNodeList(ctx.forControl().forInit());
 					addNodeEdge(forInit);
 				}
 				int forExprLine;
+				forExpr = new PDNode();
 				String forExprCode;
 				if (ctx.forControl().expression() == null) { // empty for-loop-predicate
 					forExprCode = ";";
@@ -271,15 +280,16 @@ public class JavaCDGBuilder {
 				} else {
 					forExprCode = getOriginalCodeText(ctx.forControl().expression());
 					forExprLine = ctx.forControl().expression().getStart().getLine();
+					forExpr.setASTNodeList(ctx.forControl().expression());
 				}
-				forExpr = new PDNode();
 				forExpr.setLineOfCode(forExprLine);
-				forExpr.setCode("for (" + forExprCode + ")");
+				forExpr.setCodeStr("for (" + forExprCode + ")");
+				// setASTNodeList is called at the previous block.
 				addNodeEdge(forExpr);
 				//
 				PDNode loopRegion = new PDNode();
 				loopRegion.setLineOfCode(0);
-				loopRegion.setCode("LOOP");
+				loopRegion.setCodeStr("LOOP");
 				cdg.addVertex(loopRegion);
 				cdg.addEdge(new Edge<>(forExpr, new CDEdge(CDEdge.Type.TRUE), loopRegion));
 				//
@@ -288,7 +298,8 @@ public class JavaCDGBuilder {
 				if (ctx.forControl().forUpdate() != null) { // non-empty for-update
 					forUpdate = new PDNode();
 					forUpdate.setLineOfCode(ctx.forControl().forUpdate().getStart().getLine());
-					forUpdate.setCode(getOriginalCodeText(ctx.forControl().forUpdate()));
+					forUpdate.setCodeStr(getOriginalCodeText(ctx.forControl().forUpdate()));
+					forUpdate.setASTNodeList(ctx.forControl().forUpdate());
 					// we don't use 'addNodeEdge(forUpdate)' because the behavior of for-update
 					// step is different from other statements with regards to break/continue.
 					cdg.addVertex(forUpdate);
@@ -304,12 +315,13 @@ public class JavaCDGBuilder {
 			// 'while' parExpression statement
 			PDNode whileNode = new PDNode();
 			whileNode.setLineOfCode(ctx.getStart().getLine());
-			whileNode.setCode("while " + getOriginalCodeText(ctx.parExpression()));
+			whileNode.setCodeStr("while " + getOriginalCodeText(ctx.parExpression()));
+			whileNode.setASTNodeList(ctx.parExpression());
 			addNodeEdge(whileNode);
 			//
 			PDNode loopRegion = new PDNode();
 			loopRegion.setLineOfCode(0);
-			loopRegion.setCode("LOOP");
+			loopRegion.setCodeStr("LOOP");
 			cdg.addVertex(loopRegion);
 			cdg.addEdge(new Edge<>(whileNode, new CDEdge(CDEdge.Type.TRUE), loopRegion));
 			//
@@ -324,7 +336,7 @@ public class JavaCDGBuilder {
 			// 'do' statement 'while' parExpression ';'
 			PDNode doRegion = new PDNode();
 			doRegion.setLineOfCode(ctx.getStart().getLine());
-			doRegion.setCode("do");
+			doRegion.setCodeStr("do");
 			addNodeEdge(doRegion);
 			//
 			pushLoopBlockDep(doRegion);
@@ -332,7 +344,8 @@ public class JavaCDGBuilder {
 			// the while-node is treated as the last statement of the loop
 			PDNode whileNode = new PDNode();
 			whileNode.setLineOfCode(ctx.parExpression().getStart().getLine());
-			whileNode.setCode("while " + getOriginalCodeText(ctx.parExpression()));
+			whileNode.setCodeStr("while " + getOriginalCodeText(ctx.parExpression()));
+			whileNode.setASTNodeList(ctx.parExpression());
 			addNodeEdge(whileNode);
 			//
 			popLoopBlockDep(doRegion);
@@ -347,7 +360,8 @@ public class JavaCDGBuilder {
 			// 'switch' parExpression '{' switchBlockStatementGroup* switchLabel* '}'
 			PDNode switchNode = new PDNode();
 			switchNode.setLineOfCode(ctx.getStart().getLine());
-			switchNode.setCode("switch " + getOriginalCodeText(ctx.parExpression()));
+			switchNode.setCodeStr("switch " + getOriginalCodeText(ctx.parExpression()));
+			switchNode.setASTNodeList(ctx.parExpression());
 			addNodeEdge(switchNode);
 			//
 			pushLoopBlockDep(switchNode);
@@ -366,10 +380,11 @@ public class JavaCDGBuilder {
 		private PDNode visitSwitchLabels(List<JavaParser.SwitchLabelContext> cases, 
 										   List<JavaParser.BlockStatementContext> block) {
 			//  switchLabel :  'case' constantExpression ':'  |  'case' enumConstantName ':'  |  'default' ':'
-			if (cases.size() == 1 && cases.get(0).getText().startsWith("default")) {
+			if (cases.size() == 1 && cases.get(0).getText().startsWith("default")) { // TODO fix inaccurate condition
 				PDNode defaultStmnt = new PDNode();
 				defaultStmnt.setLineOfCode(cases.get(0).getStart().getLine());
-				defaultStmnt.setCode(getOriginalCodeText(cases.get(0)));
+				defaultStmnt.setCodeStr(getOriginalCodeText(cases.get(0)));
+				defaultStmnt.setASTNodeList(cases.get(0));
 				addNodeEdge(defaultStmnt);
 				if (block != null) {
 					negDeps.push(defaultStmnt);
@@ -380,14 +395,15 @@ public class JavaCDGBuilder {
 			} else if (cases.size() > 0) {
 				PDNode lastCase =  new PDNode();
 				lastCase.setLineOfCode(cases.get(0).getStart().getLine());
-				lastCase.setCode(getOriginalCodeText(cases.get(0)));
+				lastCase.setCodeStr(getOriginalCodeText(cases.get(0)));
+				lastCase.setASTNodeList(cases.get(0));
 				addNodeEdge(lastCase);
 				//
 				PDNode thenRegion = null;
 				if (block != null && block.size() > 0) {
 					thenRegion = new PDNode();
 					thenRegion.setLineOfCode(0);
-					thenRegion.setCode("THEN");
+					thenRegion.setCodeStr("THEN");
 					cdg.addVertex(thenRegion);
 					cdg.addEdge(new Edge<>(lastCase, new CDEdge(CDEdge.Type.TRUE), thenRegion));
 				}
@@ -395,7 +411,8 @@ public class JavaCDGBuilder {
 				for (JavaParser.SwitchLabelContext ctx : cases.subList(1, cases.size())) {
 					PDNode nextCase = new PDNode();
 					nextCase.setLineOfCode(ctx.getStart().getLine());
-					nextCase.setCode(getOriginalCodeText(ctx));
+					nextCase.setCodeStr(getOriginalCodeText(ctx));
+					nextCase.setASTNodeList(ctx);
 					cdg.addVertex(nextCase);
 					cdg.addEdge(new Edge<>(lastCase, new CDEdge(CDEdge.Type.FALSE), nextCase));
 					cdg.addEdge(new Edge<>(nextCase, new CDEdge(CDEdge.Type.TRUE), thenRegion));
@@ -405,7 +422,7 @@ public class JavaCDGBuilder {
 				if (block != null) {
 					PDNode elseRegion = new PDNode();
 					elseRegion.setLineOfCode(0);
-					elseRegion.setCode("ELSE");
+					elseRegion.setCodeStr("ELSE");
 					cdg.addVertex(elseRegion); // We have to add the ELSE here, just 
 					//                            in case it is needed in the following.
 					pushCtrlDep(thenRegion);
@@ -431,7 +448,9 @@ public class JavaCDGBuilder {
 			// Identifier ':' statement
 			PDNode labelRegion = new PDNode();
 			labelRegion.setLineOfCode(ctx.getStart().getLine());
-			labelRegion.setCode(ctx.Identifier() + ": ");
+			labelRegion.setCodeStr(ctx.Identifier() + ": ");
+			// no need to assign ast to this PDNode
+			labelRegion.setProperty("name", ctx.Identifier().getText());
 			addNodeEdge(labelRegion);
 			pushCtrlDep(labelRegion);
 			visit(ctx.statement());
@@ -444,7 +463,8 @@ public class JavaCDGBuilder {
 			// 'synchronized' parExpression block
 			PDNode syncRegion = new PDNode();
 			syncRegion.setLineOfCode(ctx.getStart().getLine());
-			syncRegion.setCode("synchronized " + getOriginalCodeText(ctx.parExpression()));
+			syncRegion.setCodeStr("synchronized " + getOriginalCodeText(ctx.parExpression()));
+			syncRegion.setASTNodeList(ctx.parExpression());
 			addNodeEdge(syncRegion);
 			pushCtrlDep(syncRegion);
 			visit(ctx.block());
@@ -457,11 +477,12 @@ public class JavaCDGBuilder {
 			// 'break' Identifier? ';'
 			PDNode brk = new PDNode();
 			brk.setLineOfCode(ctx.getStart().getLine());
-			brk.setCode(getOriginalCodeText(ctx));
+			brk.setCodeStr(getOriginalCodeText(ctx));
+			brk.setASTNodeList(ctx);
 			addNodeEdge(brk);
 			//
 			// Check for the special case of a 'break' inside a 'default' switch-block:
-			if (!negDeps.isEmpty() && negDeps.peek().getCode().startsWith("default"))
+			if (!negDeps.isEmpty() && negDeps.peek().getCodeStr().startsWith("default"))
 				return null; // just ignore it, and do nothing!
 			//
 			// NOTE: an important assumption here is that 'break' 
@@ -482,7 +503,8 @@ public class JavaCDGBuilder {
 			// 'continue' Identifier? ';'
 			PDNode cnt = new PDNode();
 			cnt.setLineOfCode(ctx.getStart().getLine());
-			cnt.setCode(getOriginalCodeText(ctx));
+			cnt.setCodeStr(getOriginalCodeText(ctx));
+			cnt.setASTNodeList(ctx);
 			addNodeEdge(cnt);
 			// NOTE: an important assumption here is that 'continue' 
 			//       is the last statement inside an if-else body
@@ -501,7 +523,8 @@ public class JavaCDGBuilder {
 			// 'return' expression? ';'
 			PDNode ret = new PDNode();
 			ret.setLineOfCode(ctx.getStart().getLine());
-			ret.setCode(getOriginalCodeText(ctx));
+			ret.setCodeStr(getOriginalCodeText(ctx));
+			ret.setASTNodeList(ctx);
 			addNodeEdge(ret);
 			// NOTE: an important assumption here is that 'return' 
 			//       is the last statement inside an if-else body
@@ -521,7 +544,8 @@ public class JavaCDGBuilder {
 			// 'throw' expression ';'
 			PDNode thr = new PDNode();
 			thr.setLineOfCode(ctx.getStart().getLine());
-			thr.setCode(getOriginalCodeText(ctx));
+			thr.setCodeStr(getOriginalCodeText(ctx));
+			thr.setASTNodeList(ctx);
 			addNodeEdge(thr);
 			// NOTE: an important assumption here is that 'throw' 
 			//       is the last statement inside an if-else body,
@@ -542,7 +566,7 @@ public class JavaCDGBuilder {
 			// 'try' block (catchClause+ finallyBlock? | finallyBlock)
 			PDNode tryRegion = new PDNode();
 			tryRegion.setLineOfCode(ctx.getStart().getLine());
-			tryRegion.setCode("try");
+			tryRegion.setCodeStr("try");
 			tryRegion.setProperty("isTry", Boolean.TRUE);
 			addNodeEdge(tryRegion);
 			pushCtrlDep(tryRegion);
@@ -555,7 +579,9 @@ public class JavaCDGBuilder {
 				for (JavaParser.CatchClauseContext cx : ctx.catchClause()) {
 					catchNode = new PDNode();
 					catchNode.setLineOfCode(cx.getStart().getLine());
-					catchNode.setCode("catch (" + cx.catchType().getText() + " " + cx.Identifier().getText() + ")");
+					catchNode.setCodeStr("catch (" + cx.catchType().getText() + " " + cx.Identifier().getText() + ")");
+					catchNode.setASTNodeList(cx.catchType());
+					catchNode.setProperty("name", cx.Identifier().getText());
 					cdg.addVertex(catchNode);
 					cdg.addEdge(new Edge<>(tryRegion, new CDEdge(CDEdge.Type.THROWS), catchNode));
 					pushCtrlDep(catchNode);
@@ -571,7 +597,7 @@ public class JavaCDGBuilder {
 				// 'finally' block
 				PDNode finallyRegion = new PDNode();
 				finallyRegion.setLineOfCode(ctx.finallyBlock().getStart().getLine());
-				finallyRegion.setCode("finally");
+				finallyRegion.setCodeStr("finally");
 				addNodeEdge(finallyRegion);
 				pushCtrlDep(finallyRegion);
 				visit(ctx.finallyBlock().block());
@@ -588,7 +614,7 @@ public class JavaCDGBuilder {
 			// resource  :  variableModifier* classOrInterfaceType variableDeclaratorId '=' expression
 			PDNode tryRegion = new PDNode();
 			tryRegion.setLineOfCode(ctx.getStart().getLine());
-			tryRegion.setCode("try");
+			tryRegion.setCodeStr("try");
 			tryRegion.setProperty("isTry", Boolean.TRUE);
 			addNodeEdge(tryRegion);
 			pushCtrlDep(tryRegion);
@@ -598,7 +624,8 @@ public class JavaCDGBuilder {
 			for (JavaParser.ResourceContext rsrc: ctx.resourceSpecification().resources().resource()) {
 				PDNode resource = new PDNode();
 				resource.setLineOfCode(rsrc.getStart().getLine());
-				resource.setCode(getOriginalCodeText(rsrc));
+				resource.setCodeStr(getOriginalCodeText(rsrc));
+				resource.setASTNodeList(rsrc);
 				addNodeEdge(resource);
 			}
 			//
@@ -610,7 +637,9 @@ public class JavaCDGBuilder {
 				for (JavaParser.CatchClauseContext cx : ctx.catchClause()) {
 					catchNode = new PDNode();
 					catchNode.setLineOfCode(cx.getStart().getLine());
-					catchNode.setCode("catch (" + cx.catchType().getText() + " " + cx.Identifier().getText() + ")");
+					catchNode.setCodeStr("catch (" + cx.catchType().getText() + " " + cx.Identifier().getText() + ")");
+					catchNode.setASTNodeList(cx.catchType());
+					catchNode.setProperty("name", cx.Identifier().getText());
 					cdg.addVertex(catchNode);
 					cdg.addEdge(new Edge<>(tryRegion, new CDEdge(CDEdge.Type.THROWS), catchNode));
 					pushCtrlDep(catchNode);
@@ -626,7 +655,7 @@ public class JavaCDGBuilder {
 				// 'finally' block
 				PDNode finallyRegion = new PDNode();
 				finallyRegion.setLineOfCode(ctx.finallyBlock().getStart().getLine());
-				finallyRegion.setCode("finally");
+				finallyRegion.setCodeStr("finally");
 				addNodeEdge(finallyRegion);
 				pushCtrlDep(finallyRegion);
 				visit(ctx.finallyBlock().block());
@@ -655,7 +684,7 @@ public class JavaCDGBuilder {
 			if (buildRegion && follows) {
 				PDNode followRegion = new PDNode();
 				followRegion.setLineOfCode(0);
-				followRegion.setCode("FOLLOW-" + regionCounter++);
+				followRegion.setCodeStr("FOLLOW-" + regionCounter++);
 				cdg.addVertex(followRegion);
 				// check to see if there are any exit-jumps in the current chain
 				followRegion.setProperty("isJump", Boolean.TRUE);
@@ -737,18 +766,17 @@ public class JavaCDGBuilder {
 			popCtrlDep(region);
 		}
 
-		/**
-		 * Get the original program text for the given parser-rule context.
-		 * This is required for preserving whitespaces.
-		 */
-		private String getOriginalCodeText(ParserRuleContext ctx) {
-			int start = ctx.start.getStartIndex();
-			int stop = ctx.stop.getStopIndex();
-			Interval interval = new Interval(start, stop);
-			return ctx.start.getInputStream().getText(interval);
-		}	
-
 	}
-	
+
+	/**
+	 * Get the original program text for the given parser-rule context.
+	 * This is required for preserving whitespaces.
+	 */
+	public static String getOriginalCodeText(ParserRuleContext ctx) {
+		int start = ctx.start.getStartIndex();
+		int stop = ctx.stop.getStopIndex();
+		Interval interval = new Interval(start, stop);
+		return ctx.start.getInputStream().getText(interval);
+	}
 }
 

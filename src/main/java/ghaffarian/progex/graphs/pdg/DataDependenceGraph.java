@@ -11,12 +11,14 @@ import java.util.Map;
 import ghaffarian.progex.graphs.cfg.CFEdge;
 import ghaffarian.progex.graphs.cfg.CFNode;
 import ghaffarian.progex.graphs.cfg.ControlFlowGraph;
+import ghaffarian.progex.java.JavaCDGBuilder;
 import ghaffarian.progex.utils.StringUtils;
 import ghaffarian.nanologger.Logger;
 import ghaffarian.progex.graphs.AbstractProgramGraph;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Data Dependence Graph.
@@ -225,6 +227,7 @@ public class DataDependenceGraph extends AbstractProgramGraph<PDNode, DDEdge> {
 					dataNodes.put(pdNode, nodeCounter);
 					json.println("      \"defs\": " + StringUtils.toJsonArray(pdNode.getAllDEFs()) + ",");
 					json.println("      \"uses\": " + StringUtils.toJsonArray(pdNode.getAllUSEs()));
+					json.println("      \"ast\": [" + pdNode.getASTNodeList().stream().map(astNode -> "\"" + StringUtils.escapeDoubleQuotes(JavaCDGBuilder.getOriginalCodeText(astNode)) + "\"").collect(Collectors.joining(",")) + "],");
 				} else
                     json.println("      \"label\": \"" + StringUtils.escape(node.getCode()) + "\"");
 				ctrlNodes.put(node, nodeCounter);
