@@ -20,43 +20,26 @@ import java.util.Map.Entry;
  * @author Seyed Mohammad Ghaffarian
  */
 public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge> {
-	public enum Type {
-		INSTANCE_METHOD,
-		CLASS_METHOD,
-		CONSTRUCTOR,
-		STATIC_INITIALIZER
-	}
 	
 	public final String fileName;
-	public final int lineNumber;
-	public final int columnNumber;
-	public final String name;
-	public final Type type;
-
-	public ControlDependenceGraph(String fileName, int lineNumber, int columnNumber, String name, Type type) {
+	
+	public ControlDependenceGraph(String fileName) {
 		super();
 		this.fileName = fileName;
-		this.lineNumber = lineNumber;
-		this.columnNumber = columnNumber;
-		this.name = name;
-		this.type = type;
-		properties.put("label", "CDG of " + fileName);
+        properties.put("label", "CDG of " + fileName);
         properties.put("type", "Control Dependence Graph (CDG)");
 	}
-
-	private String baseNameForExport() {
-		return fileName.substring(0, fileName.indexOf('.')) + ":" + lineNumber + "." + columnNumber + ":" + name;
-	}
+	
     @Override
 	public void exportDOT(String outDir) throws FileNotFoundException {
         if (!outDir.endsWith(File.separator))
             outDir += File.separator;
         File outDirFile = new File(outDir);
         outDirFile.mkdirs();
-		String filename = baseNameForExport();
+		String filename = fileName.substring(0, fileName.indexOf('.'));
 		String filepath = outDir + filename + "-PDG-CTRL.dot";
 		try (PrintWriter dot = new PrintWriter(filepath, "UTF-8")) {
-			dot.println("digraph PDG_CTRL {");
+			dot.println("digraph " + filename + "_PDG_CTRL {");
             dot.println("  // graph-vertices");
 			Map<PDNode, String> nodeNames = new LinkedHashMap<>();
 			int nodeCounter = 1;
@@ -91,7 +74,8 @@ public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge>
             outDir += File.separator;
         File outDirFile = new File(outDir);
         outDirFile.mkdirs();
-		String filepath = outDir + baseNameForExport() + "-PDG-CTRL.gml";
+		String filename = fileName.substring(0, fileName.indexOf('.'));
+		String filepath = outDir + filename + "-PDG-CTRL.gml";
 		try (PrintWriter gml = new PrintWriter(filepath, "UTF-8")) {
 			gml.println("graph [");
 			gml.println("  directed 1");
@@ -141,7 +125,8 @@ public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge>
             outDir += File.separator;
         File outDirFile = new File(outDir);
         outDirFile.mkdirs();
-		String filepath = outDir + baseNameForExport() + "-PDG-CTRL.json";
+		String filename = fileName.substring(0, fileName.indexOf('.'));
+		String filepath = outDir + filename + "-PDG-CTRL.json";
 		try (PrintWriter json = new PrintWriter(filepath, "UTF-8")) {
 			json.println("{\n  \"directed\": true,");
 			for (Entry<String, String> property: properties.entrySet()) {

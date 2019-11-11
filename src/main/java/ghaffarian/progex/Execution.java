@@ -10,7 +10,6 @@ import ghaffarian.progex.graphs.ast.AbstractSyntaxTree;
 import ghaffarian.progex.graphs.cfg.CFGBuilder;
 import ghaffarian.progex.graphs.cfg.ControlFlowGraph;
 import ghaffarian.progex.graphs.cfg.ICFGBuilder;
-import ghaffarian.progex.graphs.pdg.ControlDependenceGraph;
 import ghaffarian.progex.graphs.pdg.PDGBuilder;
 import ghaffarian.progex.graphs.pdg.ProgramDependeceGraph;
 import ghaffarian.progex.utils.FileUtils;
@@ -230,9 +229,7 @@ public class Execution {
 					Logger.debug("START: " + Logger.time() + '\n');
 					try {
 						for (ProgramDependeceGraph pdg: PDGBuilder.buildForAll(lang.name, filePaths)) {
-							for (ControlDependenceGraph cd: pdg.CDS) {
-								cd.export(format.toString(), outputDir);
-							}
+							pdg.CDS.export(format.toString(), outputDir);
 							pdg.DDS.export(format.toString(), outputDir);
                             if (debugMode) {
                                 pdg.DDS.getCFG().export(format.toString(), outputDir);
