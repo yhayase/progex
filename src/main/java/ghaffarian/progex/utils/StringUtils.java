@@ -26,6 +26,7 @@ public class StringUtils {
 		String escapedCode = code.replaceAll("\"", "'");
         escapedCode = escapedCode.replaceAll("\n", " ");
         escapedCode = escapedCode.replaceAll("\r", " ");
+        escapedCode = escapedCode.replaceAll("\t", " ");
 		// Match and replace all numeric literals
 		//escapedCode = escapedCode.replaceAll("\\b-?\\d+(.\\d+)*\\b", "$NUM");
 		// Match and escape all backslashes

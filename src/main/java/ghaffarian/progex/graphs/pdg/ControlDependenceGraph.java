@@ -131,7 +131,8 @@ public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge>
 		String filename = fileName.substring(0, fileName.indexOf('.'));
 		String filepath = outDir + filename + "-PDG-CTRL.json";
 		try (PrintWriter json = new PrintWriter(filepath, "UTF-8")) {
-			json.println("{\n  \"directed\": true,");
+			json.println("{");
+			json.println("  \"directed\": true,");
 			for (Entry<String, String> property: properties.entrySet()) {
                 switch (property.getKey()) {
                     case "directed":
@@ -140,7 +141,7 @@ public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge>
                         json.println("  \"" + property.getKey() + "\": \"" + property.getValue() + "\",");
                 }
             }
-			json.println("  \"file\": \"" + fileName + "\",\n");
+			json.println("  \"file\": \"" + fileName + "\",");
             //
 			json.println("  \"nodes\": [");
 			Map<PDNode, Integer> nodeIDs = new LinkedHashMap<>();
@@ -149,7 +150,11 @@ public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge>
 				json.println("    {");
 				json.println("      \"id\": " + nodeCounter + ",");
 				json.println("      \"line\": " + node.getLineOfCode() + ",");
-				json.println("      \"ast\": [" + node.getASTNodeList().stream().map(astNode -> "\"" + StringUtils.escapeDoubleQuotes(JavaCDGBuilder.getOriginalCodeText(astNode)) + "\"").collect(Collectors.joining(",")) + "],");
+				json.println("      \"ast\": [" + node.getASTNodeList().stream().map(astNode -> "\"" + StringUtils.escape(JavaCDGBuilder.getOriginalCodeText(astNode)) + "\"").collect(Collectors.joining(",")) + "],");
+				var isEntryPoint = (Boolean)node.getProperty("entryPoint");
+				if (isEntryPoint!=null) {
+					json.println("      \"entryPoint\": " + isEntryPoint + ",");
+				}
 				nodeIDs.put(node, nodeCounter);
 				json.println("      \"label\": \"" + StringUtils.escape(node.getCodeStr()) + "\"");
 				++nodeCounter;
@@ -159,7 +164,9 @@ public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge>
                     json.println("    },");
 			}
             //
-			json.println("  ],\n\n  \"edges\": [");
+			json.println("  ],");
+			json.println();
+			json.println("  \"edges\": [");
 			int edgeCounter = 0;
 			for (Edge<PDNode, CDEdge> edge: allEdges) {
 				json.println("    {");
@@ -173,7 +180,8 @@ public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge>
                 else
                     json.println("    },");
 			}
-			json.println("  ]\n}");
+			json.println("  ]");
+			json.println("}");
 		} catch (UnsupportedEncodingException ex) {
 			Logger.error(ex);
 		}

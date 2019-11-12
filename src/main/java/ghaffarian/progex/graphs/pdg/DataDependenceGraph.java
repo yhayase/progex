@@ -199,7 +199,8 @@ public class DataDependenceGraph extends AbstractProgramGraph<PDNode, DDEdge> {
 		String filename = fileName.substring(0, fileName.indexOf('.'));
 		String filepath = outDir + filename + "-PDG-DATA.json";
 		try (PrintWriter json = new PrintWriter(filepath, "UTF-8")) {
-			json.println("{\n  \"directed\": true,");
+			json.println("{");
+			json.println("  \"directed\": true,");
 			json.println("  \"multigraph\": true,");
 			for (Map.Entry<String, String> property: properties.entrySet()) {
                 switch (property.getKey()) {
@@ -209,7 +210,7 @@ public class DataDependenceGraph extends AbstractProgramGraph<PDNode, DDEdge> {
                         json.println("  \"" + property.getKey() + "\": \"" + property.getValue() + "\",");
                 }
             }
-			json.println("  \"file\": \"" + fileName + "\",\n");
+			json.println("  \"file\": \"" + fileName + "\",");
             //
 			json.println("  \"nodes\": [");
 			Map<CFNode, Integer> ctrlNodes = new LinkedHashMap<>();
@@ -223,11 +224,15 @@ public class DataDependenceGraph extends AbstractProgramGraph<PDNode, DDEdge> {
 				json.println("      \"line\": " + node.getLineOfCode() + ",");
 				PDNode pdNode = (PDNode) node.getProperty("pdnode");
 				if (pdNode != null) {
+                    json.println("      \"ast\": [" + pdNode.getASTNodeList().stream().map(astNode -> "\"" + StringUtils.escape(JavaCDGBuilder.getOriginalCodeText(astNode)) + "\"").collect(Collectors.joining(",")) + "],");
+                    var isEntryPoint = (Boolean)pdNode.getProperty("entryPoint");
+                    if (isEntryPoint!=null) {
+                        json.println("      \"entryPoint\": " + isEntryPoint + ",");
+                    }
                     json.println("      \"label\": \"" + StringUtils.escape(node.getCode()) + "\",");
 					dataNodes.put(pdNode, nodeCounter);
 					json.println("      \"defs\": " + StringUtils.toJsonArray(pdNode.getAllDEFs()) + ",");
 					json.println("      \"uses\": " + StringUtils.toJsonArray(pdNode.getAllUSEs()));
-					json.println("      \"ast\": [" + pdNode.getASTNodeList().stream().map(astNode -> "\"" + StringUtils.escapeDoubleQuotes(JavaCDGBuilder.getOriginalCodeText(astNode)) + "\"").collect(Collectors.joining(",")) + "],");
 				} else
                     json.println("      \"label\": \"" + StringUtils.escape(node.getCode()) + "\"");
 				ctrlNodes.put(node, nodeCounter);
@@ -238,7 +243,9 @@ public class DataDependenceGraph extends AbstractProgramGraph<PDNode, DDEdge> {
                     json.println("    },");
 			}
             //
-			json.println("  ],\n\n  \"edges\": [");
+			json.println("  ],");
+			json.println();
+			json.println("  \"edges\": [");
 			int edgeCounter = 0;
             Iterator<Edge<CFNode, CFEdge>> cfEdges = cfg.allEdgesIterator();
 			while (cfEdges.hasNext()) {
@@ -265,7 +272,8 @@ public class DataDependenceGraph extends AbstractProgramGraph<PDNode, DDEdge> {
                 else
                     json.println("    },");
 			}
-			json.println("  ]\n}");
+			json.println("  ]");
+			json.println("}");
 		} catch (UnsupportedEncodingException ex) {
 			Logger.error(ex);
 		}

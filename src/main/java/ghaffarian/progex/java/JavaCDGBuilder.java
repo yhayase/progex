@@ -95,9 +95,11 @@ public class JavaCDGBuilder {
 				if (ctx.getChildCount() == 2 && ctx.getChild(0).getText().equals("static")) {
 					block.setLineOfCode(ctx.getStart().getLine());
 					block.setCodeStr("static");
+					block.setProperty("entryPoint", true);
 				} else {
-					block.setLineOfCode(0);
+					block.setLineOfCode(ctx.block().getStart().getLine());
 					block.setCodeStr("block");
+                    block.setProperty("entryPoint", true);
 				}
 				cdg.addVertex(block);
 				pushCtrlDep(block);
@@ -123,7 +125,8 @@ public class JavaCDGBuilder {
 			entry.setCodeStr(ctx.Identifier().getText() + ' ' + getOriginalCodeText(ctx.formalParameters()));
 			entry.setASTNodeList(ctx.formalParameters());
 			entry.setProperty("name", ctx.Identifier().getText());
-			cdg.addVertex(entry);
+            entry.setProperty("entryPoint", true);
+            cdg.addVertex(entry);
 			//
 			pushCtrlDep(entry);
 			visit(ctx.constructorBody());
@@ -155,6 +158,7 @@ public class JavaCDGBuilder {
 			entry.setASTNodeList(ctx.formalParameters()); //entry.setASTNodeList(ctx.typeType(), ctx.formalParameters());
 			entry.setProperty("name", ctx.Identifier().getText());
 			entry.setProperty("type", retType);
+            entry.setProperty("entryPoint", true);
 			cdg.addVertex(entry);
 			//
 			pushCtrlDep(entry);

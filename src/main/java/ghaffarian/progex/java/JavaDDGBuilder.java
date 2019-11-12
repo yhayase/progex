@@ -723,6 +723,7 @@ public class JavaDDGBuilder {
 				entry.setCodeStr(ctx.Identifier().getText() + ' ' + getOriginalCodeText(ctx.formalParameters()));
 				entry.setASTNodeList(ctx.formalParameters());
 				entry.setProperty("name", ctx.Identifier().getText());
+				entry.setProperty("entryPoint", true);
 				ddg.addVertex(entry);
 				pdNodes.put(ctx, entry);
 				//
@@ -805,6 +806,7 @@ public class JavaDDGBuilder {
 				entry.setASTNodeList(ctx.formalParameters());
 				entry.setProperty("name", ctx.Identifier().getText());
 				entry.setProperty("type", retType);
+				entry.setProperty("entryPoint", true);
 				ddg.addVertex(entry);
 				pdNodes.put(ctx, entry);
 				//
