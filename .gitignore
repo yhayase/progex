@@ -9,3 +9,4 @@ nb-configuration.xml
 prepare.sh
 *.log
 *.err
+/scripts/venv/

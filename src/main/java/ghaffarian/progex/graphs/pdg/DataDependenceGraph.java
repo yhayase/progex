@@ -229,6 +229,10 @@ public class DataDependenceGraph extends AbstractProgramGraph<PDNode, DDEdge> {
                     if (isEntryPoint!=null) {
                         json.println("      \"entryPoint\": " + isEntryPoint + ",");
                     }
+					var name = (String)pdNode.getProperty("name");
+					if (isEntryPoint!=null) {
+						json.println("      \"name\": \"" + StringUtils.escape(name) + "\",");
+					}
                     json.println("      \"label\": \"" + StringUtils.escape(node.getCode()) + "\",");
 					dataNodes.put(pdNode, nodeCounter);
 					json.println("      \"defs\": " + StringUtils.toJsonArray(pdNode.getAllDEFs()) + ",");
