@@ -870,7 +870,17 @@ public class JavaDDGBuilder {
 			//
 			return ctx.getText();
 		}
-		
+
+		@Override
+		public String visitMemberDeclaration(JavaParser.MemberDeclarationContext ctx) {
+
+			// TODO: Need to analyze dependencies between member initializers and the statements in the constructors.
+			// workaround for incorrect dependency to the first statement in constructors.
+            defList.clear();
+            useList.clear();
+            selfFlowList.clear();
+		}
+
 		@Override
 		public String visitLocalVariableDeclaration(JavaParser.LocalVariableDeclarationContext ctx) {
 			// localVariableDeclaration :  variableModifier* typeType variableDeclarators
