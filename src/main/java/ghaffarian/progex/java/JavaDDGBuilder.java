@@ -23,6 +23,7 @@ import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.misc.Interval;
+import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import ghaffarian.progex.graphs.cfg.CFNode;
@@ -54,7 +55,7 @@ public class JavaDDGBuilder {
 	private static Map<String, JavaClass> allClassInfos;
 
     private static Map<String, List<MethodDefInfo>> methodDEFs;
-	
+
 	public static DataDependenceGraph[] buildForAll(File[] files) throws IOException {
 		// Parse all Java source files
 		Logger.info("Parsing all source files ... ");
@@ -68,7 +69,15 @@ public class JavaDDGBuilder {
 			parseTrees[i] = parser.compilationUnit();
 		}
 		Logger.info("Done.");
-		
+
+		return buildForAll(parseTrees, files);
+	}
+
+	public static DataDependenceGraph[] buildForAll(ParseTree[] parseTrees, File[] files) throws IOException {
+		assert(parseTrees!=null);
+		assert(files!=null);
+		assert(parseTrees.length == files.length);
+
 		// Extract the information of all given Java classes
 		Logger.info("\nExtracting class-infos ... ");
 		allClassInfos = new HashMap<>();
