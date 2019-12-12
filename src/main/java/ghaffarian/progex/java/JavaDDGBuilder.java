@@ -881,9 +881,9 @@ public class JavaDDGBuilder {
 		}
 
 		@Override
-		public String visitMemberDeclaration(JavaParser.MemberDeclarationContext ctx) {
-
-			// TODO: Need to analyze dependencies between member initializers and the statements in the constructors.
+		public String visitFieldDeclaration(JavaParser.FieldDeclarationContext ctx) {
+			super.visitFieldDeclaration(ctx);
+			// TODO: Need to analyze dependencies between field initializers and the statements in the constructors.
 			// workaround for incorrect dependency to the first statement in constructors.
             defList.clear();
             useList.clear();
