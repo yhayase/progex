@@ -879,6 +879,7 @@ public class JavaDDGBuilder {
             defList.clear();
             useList.clear();
             selfFlowList.clear();
+            return null;
 		}
 
 		@Override
