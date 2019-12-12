@@ -150,7 +150,11 @@ public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge>
 				json.println("    {");
 				json.println("      \"id\": " + nodeCounter + ",");
 				json.println("      \"line\": " + node.getLineOfCode() + ",");
-				json.println("      \"ast\": [" + node.getASTNodeList().stream().map(astNode -> "\"" + StringUtils.escape(JavaCDGBuilder.getOriginalCodeText(astNode)) + "\"").collect(Collectors.joining(",")) + "],");
+				//json.println("      \"astId\": " + node.getASTNodeList().stream().map(astNode -> "\""+astNode.hashCode()+"\"" ).collect(Collectors.joining(",")) + "],");
+				if (node.getASTNodeList().size()>0) {
+					json.println("      \"ast\": [" + node.getASTNodeList().stream().map(astNode -> "\"" + StringUtils.escape(JavaCDGBuilder.getOriginalCodeText(astNode)) + "\"").collect(Collectors.joining(",")) + "],");
+					json.println("      \"astId\": " + node.getASTNodeList().hashCode() + ",");
+				}
 				var isEntryPoint = (Boolean)node.getProperty("entryPoint");
 				if (isEntryPoint!=null) {
 					json.println("      \"entryPoint\": " + isEntryPoint + ",");

@@ -224,7 +224,10 @@ public class DataDependenceGraph extends AbstractProgramGraph<PDNode, DDEdge> {
 				json.println("      \"line\": " + node.getLineOfCode() + ",");
 				PDNode pdNode = (PDNode) node.getProperty("pdnode");
 				if (pdNode != null) {
-                    json.println("      \"ast\": [" + pdNode.getASTNodeList().stream().map(astNode -> "\"" + StringUtils.escape(JavaCDGBuilder.getOriginalCodeText(astNode)) + "\"").collect(Collectors.joining(",")) + "],");
+					if (pdNode.getASTNodeList().size()>0) {
+						json.println("      \"ast\": [" + pdNode.getASTNodeList().stream().map(astNode -> "\"" + StringUtils.escape(JavaCDGBuilder.getOriginalCodeText(astNode)) + "\"").collect(Collectors.joining(",")) + "],");
+						json.println("      \"astId\": " + pdNode.getASTNodeList().hashCode() + ",");
+					}
                     var isEntryPoint = (Boolean)pdNode.getProperty("entryPoint");
                     if (isEntryPoint!=null) {
                         json.println("      \"entryPoint\": " + isEntryPoint + ",");
