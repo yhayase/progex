@@ -50,7 +50,6 @@ for arg in sys.argv[1:]:
             outputDoc["nodes"] = list(map((lambda id: nodeList[id]), nodesOfSubgraph))
             outputDoc["edges"] = list(map(lambda id: edgeList[id], edgesOfSubgraph))
 
-            json.dump(outputDoc, sys.stdout, indent=2)
-            print(file=sys.stdout)
-            print(file=sys.stdout)
+            with open(arg+"."+str(entry["astId"]), 'w') as outputFile:
+                json.dump(outputDoc, outputFile, indent=2)
 
