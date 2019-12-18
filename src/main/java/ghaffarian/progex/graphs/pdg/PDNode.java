@@ -1,6 +1,7 @@
 /*** In The Name of Allah ***/
 package ghaffarian.progex.graphs.pdg;
 
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import java.util.*;
@@ -22,7 +23,30 @@ public class PDNode {
 		selfFlows = new HashSet<>();
 		properties = new HashMap<>();
 	}
-	
+
+	public String formatTokensToJsonArray(CommonTokenStream tokens) {
+		StringBuilder buf = new StringBuilder();
+		buf.append("[");
+
+		var delim1 = "";
+		for (var astNode : getASTNodeList()) {
+			buf.append(delim1);
+			delim1 = ", ";
+			var interval = astNode.getSourceInterval();
+			var delim2 = "";
+			for (int i = interval.a; i<=interval.b; i++) {
+				buf.append(delim2);
+				delim2 = ", ";
+				var token = tokens.get(i);
+				buf.append("\"");
+				buf.append(token.getText().replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\""));
+				buf.append("\"");
+			}
+		}
+		buf.append("]");
+		return buf.toString();
+	}
+
 	public void setLineOfCode(int line) {
 		properties.put("line", line);
 	}

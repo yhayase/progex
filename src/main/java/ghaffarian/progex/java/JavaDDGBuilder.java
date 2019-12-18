@@ -60,20 +60,22 @@ public class JavaDDGBuilder {
 		// Parse all Java source files
 		Logger.info("Parsing all source files ... ");
 		ParseTree[] parseTrees = new ParseTree[files.length];
+		CommonTokenStream[] tokenStreams = new CommonTokenStream[files.length];
 		for (int i = 0; i < files.length; ++i) {
 			InputStream inFile = new FileInputStream(files[i]);
 			ANTLRInputStream input = new ANTLRInputStream(inFile);
 			JavaLexer lexer = new JavaLexer(input);
 			CommonTokenStream tokens = new CommonTokenStream(lexer);
+			tokenStreams[i] = tokens;
 			JavaParser parser = new JavaParser(tokens);
 			parseTrees[i] = parser.compilationUnit();
 		}
 		Logger.info("Done.");
 
-		return buildForAll(parseTrees, files);
+		return buildForAll(parseTrees, files, tokenStreams);
 	}
 
-	public static DataDependenceGraph[] buildForAll(ParseTree[] parseTrees, File[] files) throws IOException {
+	public static DataDependenceGraph[] buildForAll(ParseTree[] parseTrees, File[] files, CommonTokenStream[] tokenStreams) throws IOException {
 		assert(parseTrees!=null);
 		assert(files!=null);
 		assert(parseTrees.length == files.length);
@@ -116,7 +118,7 @@ public class JavaDDGBuilder {
 		// Iteratively, extract USE-DEF info for all program statements ...
 		DataDependenceGraph[] ddgs = new DataDependenceGraph[files.length];
 		for (int i = 0; i < ddgs.length; ++i)
-			ddgs[i] = new DataDependenceGraph(files[i].getName());
+			ddgs[i] = new DataDependenceGraph(files[i].getName(), tokenStreams[i]);
 		//
 		Map<ParserRuleContext, Object>[] pdNodes = new Map[parseTrees.length];
 		for (int i = 0; i < parseTrees.length; ++i)
@@ -235,7 +237,7 @@ public class JavaDDGBuilder {
 		//
 		Logger.info("\nAnalyzing imports DEF-USE ... ");
 		Map<ParserRuleContext, Object> dummyMap = new HashMap<>();
-		DataDependenceGraph dummyDDG = new DataDependenceGraph("Dummy.java");
+		DataDependenceGraph dummyDDG = new DataDependenceGraph("Dummy.java", null);
 		boolean changed;
 		int iteration = 0;
 		do {

@@ -24,7 +24,7 @@ public abstract class AbstractProgramGraph<N, E> extends Digraph<N, E>  {
     public AbstractProgramGraph(AbstractProgramGraph g) {
         super(g);
     }
-    
+
 	/**
 	 * Export this program graph to specified file format.
      * The file will be saved in current working directory.

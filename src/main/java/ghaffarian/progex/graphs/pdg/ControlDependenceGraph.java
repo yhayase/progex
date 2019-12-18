@@ -9,13 +9,13 @@ import java.io.UnsupportedEncodingException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import ghaffarian.progex.java.JavaCDGBuilder;
 import ghaffarian.progex.utils.StringUtils;
 import ghaffarian.nanologger.Logger;
 import ghaffarian.progex.graphs.AbstractProgramGraph;
+import org.antlr.v4.runtime.CommonTokenStream;
+
 import java.io.IOException;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 /**
  * Control Dependence Graph.
@@ -25,10 +25,12 @@ import java.util.stream.Collectors;
 public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge> {
 	
 	public final String fileName;
+	public final CommonTokenStream tokens;
 	
-	public ControlDependenceGraph(String fileName) {
+	public ControlDependenceGraph(String fileName, CommonTokenStream tokens) {
 		super();
 		this.fileName = fileName;
+		this.tokens = tokens;
         properties.put("label", "CDG of " + fileName);
         properties.put("type", "Control Dependence Graph (CDG)");
 	}
@@ -152,8 +154,10 @@ public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge>
 				json.println("      \"line\": " + node.getLineOfCode() + ",");
 				//json.println("      \"astId\": " + node.getASTNodeList().stream().map(astNode -> "\""+astNode.hashCode()+"\"" ).collect(Collectors.joining(",")) + "],");
 				if (node.getASTNodeList().size()>0) {
-					json.println("      \"ast\": [" + node.getASTNodeList().stream().map(astNode -> "\"" + StringUtils.escape(JavaCDGBuilder.getOriginalCodeText(astNode)) + "\"").collect(Collectors.joining(",")) + "],");
 					json.println("      \"astId\": " + node.getASTNodeList().hashCode() + ",");
+					json.print("      \"tokens\":");
+					json.print(node.formatTokensToJsonArray(tokens));
+					json.println(",");
 				}
 				var isEntryPoint = (Boolean)node.getProperty("entryPoint");
 				if (isEntryPoint!=null) {

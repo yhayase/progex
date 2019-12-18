@@ -41,11 +41,13 @@ public class JavaPDGBuilder {
 	public static ProgramDependeceGraph[] buildForAll(File[] javaFiles) throws IOException {
 		Logger.info("Parsing all source files ... ");
 		ParseTree[] parseTrees = new ParseTree[javaFiles.length];
+		CommonTokenStream[] tokenStreams = new CommonTokenStream[javaFiles.length];
 		for (int i = 0; i < javaFiles.length; ++i) {
 			InputStream inFile = new FileInputStream(javaFiles[i]);
 			ANTLRInputStream input = new ANTLRInputStream(inFile);
 			JavaLexer lexer = new JavaLexer(input);
 			CommonTokenStream tokens = new CommonTokenStream(lexer);
+			tokenStreams[i] = tokens;
 			JavaParser parser = new JavaParser(tokens);
 			parseTrees[i] = parser.compilationUnit();
 		}
@@ -54,10 +56,10 @@ public class JavaPDGBuilder {
 		ControlDependenceGraph[] ctrlSubgraphs;
 		ctrlSubgraphs = new ControlDependenceGraph[javaFiles.length];
 		for (int i = 0; i < javaFiles.length; ++i)
-			ctrlSubgraphs[i] = JavaCDGBuilder.build(parseTrees[i], javaFiles[i]);
+			ctrlSubgraphs[i] = JavaCDGBuilder.build(parseTrees[i], javaFiles[i], tokenStreams[i]);
         //
 		DataDependenceGraph[] dataSubgraphs;
-		dataSubgraphs = JavaDDGBuilder.buildForAll(parseTrees, javaFiles);
+		dataSubgraphs = JavaDDGBuilder.buildForAll(parseTrees, javaFiles, tokenStreams);
         //
 		// Join the subgraphs into PDGs
 		ProgramDependeceGraph[] pdgArray = new ProgramDependeceGraph[javaFiles.length];

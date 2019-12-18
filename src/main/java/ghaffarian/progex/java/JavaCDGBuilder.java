@@ -39,12 +39,12 @@ public class JavaCDGBuilder {
 		CommonTokenStream tokens = new CommonTokenStream(lexer);
 		JavaParser parser = new JavaParser(tokens);
 		ParseTree tree = parser.compilationUnit();
-		return build(tree, javaFile);
+		return build(tree, javaFile, tokens);
 	}
 
-	public static ControlDependenceGraph build(ParseTree tree, File javaFile) {
+	public static ControlDependenceGraph build(ParseTree tree, File javaFile, CommonTokenStream tokens) {
 		Logger.debug("CTRL DEP ANALYSIS: " + javaFile.getPath());
-		ControlDependenceGraph cdg = new ControlDependenceGraph(javaFile.getName());
+		ControlDependenceGraph cdg = new ControlDependenceGraph(javaFile.getName(), tokens);
 		ControlDependencyVisitor visitor = new ControlDependencyVisitor(cdg);
 		visitor.visit(tree);
 		return cdg;
