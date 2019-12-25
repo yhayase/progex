@@ -182,9 +182,21 @@ constantDeclarator
 
 // see matching of [] comment in methodDeclaratorRest
 interfaceMethodDeclaration
-    :   (typeType|'void') Identifier formalParameters ('[' ']')*
+    :   interfaceMethodModifier* (typeType|'void') Identifier formalParameters ('[' ']')*
         ('throws' qualifiedNameList)?
-        ';'
+        (   methodBody
+        |   ';'
+        )
+    ;
+
+// Java8
+interfaceMethodModifier
+    : annotation
+    | PUBLIC
+    | ABSTRACT
+    | DEFAULT
+    | STATIC
+    | STRICTFP
     ;
 
 genericInterfaceMethodDeclaration
@@ -505,6 +517,31 @@ expression
         |   '%='
         )
         expression														# exprAssignment
+    // Java8 Lambda Expression
+    | lambdaExpression													# exprLambda
+
+    // Java 8 methodReference
+    | expression '::' typeArguments? Identifier							# exprExpressionMethodReference
+    | typeType '::' (typeArguments? Identifier | NEW)					# exprTypeMethodReference
+    | classType '::' typeArguments? NEW									# exprClassMethodReference
+    ;
+
+// Java8
+lambdaExpression
+    : lambdaParameters '->' lambdaBody
+    ;
+
+// Java8
+lambdaParameters
+    : Identifier
+    | '(' formalParameterList? ')'
+    | '(' Identifier (',' Identifier)* ')'
+    ;
+
+// Java8
+lambdaBody
+    : expression
+    | block
     ;
 
 primary
@@ -516,6 +553,10 @@ primary
     |   typeType '.' 'class'
     |   'void' '.' 'class'
     |   nonWildcardTypeArguments (explicitGenericInvocationSuffix | 'this' arguments)
+    ;
+
+classType
+    : (classOrInterfaceType '.')? annotation* Identifier typeArguments?
     ;
 
 creator
@@ -988,3 +1029,7 @@ COMMENT
 LINE_COMMENT
     :   '//' ~[\r\n]* -> skip
     ;
+
+// Java 8 tokens
+ARROW:              '->';
+COLONCOLON:         '::';

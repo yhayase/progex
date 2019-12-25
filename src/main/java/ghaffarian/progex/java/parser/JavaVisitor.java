@@ -197,6 +197,12 @@ public interface JavaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitInterfaceMethodDeclaration(JavaParser.InterfaceMethodDeclarationContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link JavaParser#interfaceMethodModifier}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitInterfaceMethodModifier(JavaParser.InterfaceMethodModifierContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link JavaParser#genericInterfaceMethodDeclaration}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -681,6 +687,13 @@ public interface JavaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitExprMethodInvocation(JavaParser.ExprMethodInvocationContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code exprLambda}
+	 * labeled alternative in {@link JavaParser#expression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitExprLambda(JavaParser.ExprLambdaContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code exprArrayIndexing}
 	 * labeled alternative in {@link JavaParser#expression}.
 	 * @param ctx the parse tree
@@ -708,6 +721,13 @@ public interface JavaVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitExprLogicOr(JavaParser.ExprLogicOrContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code exprExpressionMethodReference}
+	 * labeled alternative in {@link JavaParser#expression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitExprExpressionMethodReference(JavaParser.ExprExpressionMethodReferenceContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code exprBitXOR}
 	 * labeled alternative in {@link JavaParser#expression}.
@@ -750,6 +770,13 @@ public interface JavaVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitExprBitShift(JavaParser.ExprBitShiftContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code exprClassMethodReference}
+	 * labeled alternative in {@link JavaParser#expression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitExprClassMethodReference(JavaParser.ExprClassMethodReferenceContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code exprLogicAnd}
 	 * labeled alternative in {@link JavaParser#expression}.
@@ -807,6 +834,13 @@ public interface JavaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitExprInstanceOf(JavaParser.ExprInstanceOfContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code exprTypeMethodReference}
+	 * labeled alternative in {@link JavaParser#expression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitExprTypeMethodReference(JavaParser.ExprTypeMethodReferenceContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code exprConditional}
 	 * labeled alternative in {@link JavaParser#expression}.
 	 * @param ctx the parse tree
@@ -828,11 +862,35 @@ public interface JavaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitExprCasting(JavaParser.ExprCastingContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link JavaParser#lambdaExpression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLambdaExpression(JavaParser.LambdaExpressionContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link JavaParser#lambdaParameters}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLambdaParameters(JavaParser.LambdaParametersContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link JavaParser#lambdaBody}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLambdaBody(JavaParser.LambdaBodyContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link JavaParser#primary}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitPrimary(JavaParser.PrimaryContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link JavaParser#classType}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitClassType(JavaParser.ClassTypeContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link JavaParser#creator}.
 	 * @param ctx the parse tree

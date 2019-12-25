@@ -318,6 +318,16 @@ public interface JavaListener extends ParseTreeListener {
 	 */
 	void exitInterfaceMethodDeclaration(JavaParser.InterfaceMethodDeclarationContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link JavaParser#interfaceMethodModifier}.
+	 * @param ctx the parse tree
+	 */
+	void enterInterfaceMethodModifier(JavaParser.InterfaceMethodModifierContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link JavaParser#interfaceMethodModifier}.
+	 * @param ctx the parse tree
+	 */
+	void exitInterfaceMethodModifier(JavaParser.InterfaceMethodModifierContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link JavaParser#genericInterfaceMethodDeclaration}.
 	 * @param ctx the parse tree
 	 */
@@ -1132,6 +1142,18 @@ public interface JavaListener extends ParseTreeListener {
 	 */
 	void exitExprMethodInvocation(JavaParser.ExprMethodInvocationContext ctx);
 	/**
+	 * Enter a parse tree produced by the {@code exprLambda}
+	 * labeled alternative in {@link JavaParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterExprLambda(JavaParser.ExprLambdaContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code exprLambda}
+	 * labeled alternative in {@link JavaParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitExprLambda(JavaParser.ExprLambdaContext ctx);
+	/**
 	 * Enter a parse tree produced by the {@code exprArrayIndexing}
 	 * labeled alternative in {@link JavaParser#expression}.
 	 * @param ctx the parse tree
@@ -1179,6 +1201,18 @@ public interface JavaListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitExprLogicOr(JavaParser.ExprLogicOrContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code exprExpressionMethodReference}
+	 * labeled alternative in {@link JavaParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterExprExpressionMethodReference(JavaParser.ExprExpressionMethodReferenceContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code exprExpressionMethodReference}
+	 * labeled alternative in {@link JavaParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitExprExpressionMethodReference(JavaParser.ExprExpressionMethodReferenceContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code exprBitXOR}
 	 * labeled alternative in {@link JavaParser#expression}.
@@ -1251,6 +1285,18 @@ public interface JavaListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitExprBitShift(JavaParser.ExprBitShiftContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code exprClassMethodReference}
+	 * labeled alternative in {@link JavaParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterExprClassMethodReference(JavaParser.ExprClassMethodReferenceContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code exprClassMethodReference}
+	 * labeled alternative in {@link JavaParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitExprClassMethodReference(JavaParser.ExprClassMethodReferenceContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code exprLogicAnd}
 	 * labeled alternative in {@link JavaParser#expression}.
@@ -1348,6 +1394,18 @@ public interface JavaListener extends ParseTreeListener {
 	 */
 	void exitExprInstanceOf(JavaParser.ExprInstanceOfContext ctx);
 	/**
+	 * Enter a parse tree produced by the {@code exprTypeMethodReference}
+	 * labeled alternative in {@link JavaParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterExprTypeMethodReference(JavaParser.ExprTypeMethodReferenceContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code exprTypeMethodReference}
+	 * labeled alternative in {@link JavaParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitExprTypeMethodReference(JavaParser.ExprTypeMethodReferenceContext ctx);
+	/**
 	 * Enter a parse tree produced by the {@code exprConditional}
 	 * labeled alternative in {@link JavaParser#expression}.
 	 * @param ctx the parse tree
@@ -1384,6 +1442,36 @@ public interface JavaListener extends ParseTreeListener {
 	 */
 	void exitExprCasting(JavaParser.ExprCastingContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link JavaParser#lambdaExpression}.
+	 * @param ctx the parse tree
+	 */
+	void enterLambdaExpression(JavaParser.LambdaExpressionContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link JavaParser#lambdaExpression}.
+	 * @param ctx the parse tree
+	 */
+	void exitLambdaExpression(JavaParser.LambdaExpressionContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link JavaParser#lambdaParameters}.
+	 * @param ctx the parse tree
+	 */
+	void enterLambdaParameters(JavaParser.LambdaParametersContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link JavaParser#lambdaParameters}.
+	 * @param ctx the parse tree
+	 */
+	void exitLambdaParameters(JavaParser.LambdaParametersContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link JavaParser#lambdaBody}.
+	 * @param ctx the parse tree
+	 */
+	void enterLambdaBody(JavaParser.LambdaBodyContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link JavaParser#lambdaBody}.
+	 * @param ctx the parse tree
+	 */
+	void exitLambdaBody(JavaParser.LambdaBodyContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link JavaParser#primary}.
 	 * @param ctx the parse tree
 	 */
@@ -1393,6 +1481,16 @@ public interface JavaListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitPrimary(JavaParser.PrimaryContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link JavaParser#classType}.
+	 * @param ctx the parse tree
+	 */
+	void enterClassType(JavaParser.ClassTypeContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link JavaParser#classType}.
+	 * @param ctx the parse tree
+	 */
+	void exitClassType(JavaParser.ClassTypeContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link JavaParser#creator}.
 	 * @param ctx the parse tree
