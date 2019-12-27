@@ -132,9 +132,16 @@ public class JavaDDGBuilder {
 			changed = false;
 			for (int i = 0; i < files.length; ++i) {
 				currentFile = files[i].getName();
-				DefUseVisitor defUse = new DefUseVisitor(iteration, filesClasses.get(i), ddgs[i], pdNodes[i]);
-				defUse.visit(parseTrees[i]);
-				changed |= defUse.changed;
+				if (ddgs[i] != null) {
+					DefUseVisitor defUse = new DefUseVisitor(iteration, filesClasses.get(i), ddgs[i], pdNodes[i]);
+					try {
+						defUse.visit(parseTrees[i]);
+					} catch (NullPointerException e) {
+						ddgs[i] = null;
+						pdNodes[i] = null;
+					}
+					changed |= defUse.changed;
+				}
 			}
 			Logger.debug("Iteration #" + iteration + ": " + (changed ? "CHANGED" : "NO-CHANGE"));
 			Logger.debug("\n========================================\n");
@@ -144,15 +151,27 @@ public class JavaDDGBuilder {
 		// Build control-flow graphs for all Java files including the extracted DEF-USE info ...
 		Logger.info("\nExtracting CFGs ... ");
 		ControlFlowGraph[] cfgs = new ControlFlowGraph[files.length];
-		for (int i = 0; i < files.length; ++i) 
-			cfgs[i] = JavaCFGBuilder.build(files[i].getName(), parseTrees[i], "pdnode", pdNodes[i]);
+		for (int i = 0; i < files.length; ++i) {
+			if (ddgs[i]!=null) {
+				try {
+					cfgs[i] = JavaCFGBuilder.build(files[i].getName(), parseTrees[i], "pdnode", pdNodes[i]);
+				} catch(NullPointerException e) {
+					// cfgs[i] remains null.
+				}
+			}
+		}
 		Logger.info("Done.");
 		
 		// Finally, traverse all control-flow paths and draw data-flow dependency edges ...
 		Logger.info("\nAdding data-flow edges ... ");
 		for (int i = 0; i < files.length; ++i) {
-			addDataFlowEdges(cfgs[i], ddgs[i]);
-			ddgs[i].attachCFG(cfgs[i]);
+			if (cfgs[i]==null) {
+				ddgs[i] = null;
+				pdNodes[i] = null;
+			} else {
+				addDataFlowEdges(cfgs[i], ddgs[i]);
+				ddgs[i].attachCFG(cfgs[i]);
+			}
 		}
 		Logger.info("Done.\n");
 		

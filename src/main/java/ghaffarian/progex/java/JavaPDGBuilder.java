@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 
 import ghaffarian.nanologger.Logger;
 import ghaffarian.progex.graphs.pdg.ControlDependenceGraph;
@@ -77,8 +78,13 @@ public class JavaPDGBuilder {
 
 		ControlDependenceGraph[] ctrlSubgraphs;
 		ctrlSubgraphs = new ControlDependenceGraph[javaFiles.length];
-		for (int i = 0; i < javaFiles.length; ++i)
-			ctrlSubgraphs[i] = JavaCDGBuilder.build(parseTrees[i], javaFiles[i], tokenStreams[i]);
+		for (int i = 0; i < javaFiles.length; ++i) {
+			try {
+				ctrlSubgraphs[i] = JavaCDGBuilder.build(parseTrees[i], javaFiles[i], tokenStreams[i]);
+			} catch(NullPointerException e) {
+				// ctrlSubgraphs[i] remains null.
+			}
+		}
         //
 		DataDependenceGraph[] dataSubgraphs;
 		dataSubgraphs = JavaDDGBuilder.buildForAll(parseTrees, javaFiles, tokenStreams);
@@ -86,11 +92,13 @@ public class JavaPDGBuilder {
 		// Join the subgraphs into PDGs
 		ProgramDependeceGraph[] pdgArray = new ProgramDependeceGraph[javaFiles.length];
 		for (int i = 0; i < javaFiles.length; ++i) {
-			pdgArray[i] = new ProgramDependeceGraph(javaFiles[i].getName(), 
-					ctrlSubgraphs[i], dataSubgraphs[i]);
+			if (ctrlSubgraphs[i] != null && dataSubgraphs[i]!=null) {
+				pdgArray[i] = new ProgramDependeceGraph(javaFiles[i].getName(),
+						ctrlSubgraphs[i], dataSubgraphs[i]);
+			}
 		}
-		
-		return pdgArray;
+
+		return Arrays.stream(pdgArray).filter(e-> e!=null).toArray(ProgramDependeceGraph[]::new);
 	}
 
 }
