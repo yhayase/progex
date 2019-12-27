@@ -119,9 +119,15 @@ public class JavaCDGBuilder {
 				return visitChildren(ctx);
 		}
 
-		// Do not analyze codes in anonymous classes to prevent race conditions.
+		// Do not analyze codes in anonymous classes to prevent inconsistent condition.
 		@Override
 		public Void visitClassCreatorRest(JavaParser.ClassCreatorRestContext ctx) {
+			return null;
+		}
+
+		// Do not analyze codes in lambda function body to prevent inconsistent condition.
+		@Override
+		public Void visitLambdaExpression(JavaParser.LambdaExpressionContext ctx) {
 			return null;
 		}
 
