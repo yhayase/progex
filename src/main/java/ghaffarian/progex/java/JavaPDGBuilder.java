@@ -42,6 +42,7 @@ public class JavaPDGBuilder {
 		Logger.info("Parsing all source files ... ");
 		ParseTree[] parseTrees = new ParseTree[javaFiles.length];
 		CommonTokenStream[] tokenStreams = new CommonTokenStream[javaFiles.length];
+		int numErrorFiles = 0;
 		for (int i = 0; i < javaFiles.length; ++i) {
 			InputStream inFile = new FileInputStream(javaFiles[i]);
 			ANTLRInputStream input = new ANTLRInputStream(inFile);
@@ -49,7 +50,28 @@ public class JavaPDGBuilder {
 			CommonTokenStream tokens = new CommonTokenStream(lexer);
 			tokenStreams[i] = tokens;
 			JavaParser parser = new JavaParser(tokens);
-			parseTrees[i] = parser.compilationUnit();
+			if (parser.getNumberOfSyntaxErrors()==0) {
+				parseTrees[i] = parser.compilationUnit();
+			} else {
+				numErrorFiles+=1;
+			}
+		}
+		if (numErrorFiles>0) {
+			File[] newJavaFiles = new File[javaFiles.length - numErrorFiles];
+			ParseTree[] newParseTrees = new ParseTree[javaFiles.length - numErrorFiles];
+			int nullCount = 0;
+			for (int i = 0; i < javaFiles.length; ++i) {
+				if (parseTrees[i] == null) {
+					nullCount += 1;
+				} else {
+					newJavaFiles[i-nullCount] = javaFiles[i];
+					newParseTrees[i-nullCount] = parseTrees[i];
+				}
+			}
+			assert(numErrorFiles == nullCount);
+
+			javaFiles = newJavaFiles;
+			parseTrees = newParseTrees;
 		}
 		Logger.info("Done.");
 
