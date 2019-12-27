@@ -119,6 +119,12 @@ public class JavaCDGBuilder {
 				return visitChildren(ctx);
 		}
 
+		// Do not analyze codes in anonymous classes to prevent race conditions.
+		@Override
+		public Void visitClassCreatorRest(JavaParser.ClassCreatorRestContext ctx) {
+			return null;
+		}
+
 		@Override
 		public Void visitConstructorDeclaration(JavaParser.ConstructorDeclarationContext ctx) {
 			// Identifier formalParameters ('throws' qualifiedNameList)?  constructorBody
