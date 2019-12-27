@@ -1909,7 +1909,39 @@ public class JavaDDGBuilder {
 			// the parethesis are added to mark this expression as used
 			return '(' + expr1 + " $ASSIGN " + expr2 + ')';
 		}
-		
+
+
+		@Override
+		public String visitLambdaExpression(JavaParser.LambdaExpressionContext ctx) {
+			return '(' + ctx.lambdaParameters().getText() + " -> " + ctx.lambdaBody().getText() + ')';
+		}
+
+		@Override
+		public String visitExprExpressionMethodReference(JavaParser.ExprExpressionMethodReferenceContext ctx) {
+			String expr = visit(ctx.expression());
+			String identifier = ctx.Identifier().getText();
+			if (isUsableExpression(expr))
+				useList.add(expr);
+			// the parethesis are added to mark this expression as used
+			return '(' + expr + "::" + identifier + ')';
+		}
+
+		@Override
+		public String visitExprClassMethodReference(JavaParser.ExprClassMethodReferenceContext ctx) {
+			String cType = visit(ctx.classType());
+			String _new = ctx.NEW().getText();
+			// the parethesis are added to mark this expression as used
+			return '(' + cType + "::" + _new + ')';
+		}
+
+		@Override
+		public String visitExprTypeMethodReference(JavaParser.ExprTypeMethodReferenceContext ctx) {
+			String tType = visit(ctx.typeType());
+			String name = (ctx.Identifier() !=null ? ctx.Identifier() : ctx.NEW()).getText();
+			// the parethesis are added to mark this expression as used
+			return '(' + tType + "::" + name + ')';
+		}
+
 		@Override
 		public String visitVariableDeclarators(JavaParser.VariableDeclaratorsContext ctx) {
 			// variableDeclarators :  variableDeclarator (',' variableDeclarator)*
