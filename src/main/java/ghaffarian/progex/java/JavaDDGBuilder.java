@@ -131,12 +131,15 @@ public class JavaDDGBuilder {
 			++iteration;
 			changed = false;
 			for (int i = 0; i < files.length; ++i) {
+				Logger.info("Analyzing DEF-USE relationships on " + files[i].getPath());
 				currentFile = files[i].getName();
 				if (ddgs[i] != null) {
 					DefUseVisitor defUse = new DefUseVisitor(iteration, filesClasses.get(i), ddgs[i], pdNodes[i]);
 					try {
 						defUse.visit(parseTrees[i]);
 					} catch (NullPointerException e) {
+						Logger.error("Error on analyzing DEF-USE relationships on " + files[i].getPath());
+						Logger.error(e);
 						ddgs[i] = null;
 						pdNodes[i] = null;
 					}
@@ -152,10 +155,13 @@ public class JavaDDGBuilder {
 		Logger.info("\nExtracting CFGs ... ");
 		ControlFlowGraph[] cfgs = new ControlFlowGraph[files.length];
 		for (int i = 0; i < files.length; ++i) {
+			Logger.info("Calculating CFG from " + files[i].getPath());
 			if (ddgs[i]!=null) {
 				try {
 					cfgs[i] = JavaCFGBuilder.build(files[i].getName(), parseTrees[i], "pdnode", pdNodes[i]);
 				} catch(NullPointerException e) {
+					Logger.error("Error on calculating CFG from " + files[i].getPath());
+					Logger.error(e);
 					// cfgs[i] remains null.
 				}
 			}

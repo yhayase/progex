@@ -45,6 +45,8 @@ public class JavaPDGBuilder {
 		CommonTokenStream[] tokenStreams = new CommonTokenStream[javaFiles.length];
 		int numErrorFiles = 0;
 		for (int i = 0; i < javaFiles.length; ++i) {
+			Logger.info("Parsing " + javaFiles[i].getPath());
+
 			InputStream inFile = new FileInputStream(javaFiles[i]);
 			ANTLRInputStream input = new ANTLRInputStream(inFile);
 			JavaLexer lexer = new JavaLexer(input);
@@ -54,6 +56,7 @@ public class JavaPDGBuilder {
 			if (parser.getNumberOfSyntaxErrors()==0) {
 				parseTrees[i] = parser.compilationUnit();
 			} else {
+				Logger.error("Error on parsing " + javaFiles[i].getPath());
 				numErrorFiles+=1;
 			}
 		}
@@ -79,9 +82,12 @@ public class JavaPDGBuilder {
 		ControlDependenceGraph[] ctrlSubgraphs;
 		ctrlSubgraphs = new ControlDependenceGraph[javaFiles.length];
 		for (int i = 0; i < javaFiles.length; ++i) {
+			Logger.info("Calculating CDG from " + javaFiles[i].getPath());
 			try {
 				ctrlSubgraphs[i] = JavaCDGBuilder.build(parseTrees[i], javaFiles[i], tokenStreams[i]);
 			} catch(NullPointerException e) {
+				Logger.error("Error on caluculating CDG from " + javaFiles[i].getPath());
+				Logger.error(e);
 				// ctrlSubgraphs[i] remains null.
 			}
 		}
