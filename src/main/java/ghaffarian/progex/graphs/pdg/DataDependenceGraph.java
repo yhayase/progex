@@ -199,7 +199,12 @@ public class DataDependenceGraph extends AbstractProgramGraph<PDNode, DDEdge> {
         File outDirFile = new File(outDir);
         outDirFile.mkdirs();
 		String filename = fileName.substring(0, fileName.indexOf('.'));
-		String filepath = outDir + filename + "-PDG-DATA.json";
+		String filepath;
+		int i=0;
+		do {
+			i++;
+			filepath = outDir + filename + "-" + i + "-PDG-DATA.json";
+		}  while (new File(filepath).exists());
 		try (PrintWriter json = new PrintWriter(filepath, "UTF-8")) {
 			json.println("{");
 			json.println("  \"directed\": true,");

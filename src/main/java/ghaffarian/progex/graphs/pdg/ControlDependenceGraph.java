@@ -131,7 +131,12 @@ public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge>
         File outDirFile = new File(outDir);
         outDirFile.mkdirs();
 		String filename = fileName.substring(0, fileName.indexOf('.'));
-		String filepath = outDir + filename + "-PDG-CTRL.json";
+		String filepath;
+		int i=0;
+		do {
+			i++;
+		  	filepath = outDir + filename + "-" + i + "-PDG-CTRL.json";
+		}  while (new File(filepath).exists());
 		try (PrintWriter json = new PrintWriter(filepath, "UTF-8")) {
 			json.println("{");
 			json.println("  \"directed\": true,");
