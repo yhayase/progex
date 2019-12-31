@@ -24,14 +24,14 @@ import java.util.Map.Entry;
  */
 public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge> {
 	
-	public final String fileName;
+	private final File srcFile;
 	public final CommonTokenStream tokens;
 	
-	public ControlDependenceGraph(String fileName, CommonTokenStream tokens) {
+	public ControlDependenceGraph(File srcFile, CommonTokenStream tokens) {
 		super();
-		this.fileName = fileName;
+		this.srcFile = srcFile;
 		this.tokens = tokens;
-        properties.put("label", "CDG of " + fileName);
+        properties.put("label", "CDG of " + getFileName());
         properties.put("type", "Control Dependence Graph (CDG)");
 	}
 	
@@ -41,7 +41,7 @@ public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge>
             outDir += File.separator;
         File outDirFile = new File(outDir);
         outDirFile.mkdirs();
-		String filename = fileName.substring(0, fileName.indexOf('.'));
+		String filename = getFileName().substring(0, getFileName().indexOf('.'));
 		String filepath = outDir + filename + "-PDG-CTRL.dot";
 		try (PrintWriter dot = new PrintWriter(filepath, "UTF-8")) {
 			dot.println("digraph " + filename + "_PDG_CTRL {");
@@ -79,7 +79,7 @@ public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge>
             outDir += File.separator;
         File outDirFile = new File(outDir);
         outDirFile.mkdirs();
-		String filename = fileName.substring(0, fileName.indexOf('.'));
+		String filename = getFileName().substring(0, getFileName().indexOf('.'));
 		String filepath = outDir + filename + "-PDG-CTRL.gml";
 		try (PrintWriter gml = new PrintWriter(filepath, "UTF-8")) {
 			gml.println("graph [");
@@ -92,7 +92,7 @@ public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge>
                         gml.println("  " + property.getKey() + " \"" + property.getValue() + "\"");
                 }
             }
-            gml.println("  file \"" + this.fileName + "\"\n");
+            gml.println("  file \"" + this.getFileName() + "\"\n");
             //
 			Map<PDNode, Integer> nodeIDs = new LinkedHashMap<>();
 			int nodeCounter = 0;
@@ -130,7 +130,7 @@ public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge>
             outDir += File.separator;
         File outDirFile = new File(outDir);
         outDirFile.mkdirs();
-		String filename = fileName.substring(0, fileName.indexOf('.'));
+		String filename = getFileName().substring(0, getFileName().indexOf('.'));
 		String filepath;
 		int i=0;
 		do {
@@ -148,7 +148,8 @@ public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge>
                         json.println("  \"" + property.getKey() + "\": \"" + property.getValue() + "\",");
                 }
             }
-			json.println("  \"file\": \"" + fileName + "\",");
+			json.println("  \"file\": " + StringUtils.toJsonString(getFileName()) + ",");
+			json.println("  \"path\": " + StringUtils.toJsonString(srcFile.getPath()) + ",");
             //
 			json.println("  \"nodes\": [");
 			Map<PDNode, Integer> nodeIDs = new LinkedHashMap<>();
@@ -170,10 +171,10 @@ public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge>
 				}
 				var name = (String)node.getProperty("name");
 				if (isEntryPoint!=null) {
-					json.println("      \"name\": \"" + StringUtils.escape(name) + "\",");
+					json.println("      \"name\": " + StringUtils.toJsonString(name) + ",");
 				}
 				nodeIDs.put(node, nodeCounter);
-				json.println("      \"label\": \"" + StringUtils.escape(node.getCodeStr()) + "\"");
+				json.println("      \"label\": " + StringUtils.toJsonString(node.getCodeStr()));
 				++nodeCounter;
                 if (nodeCounter == allVertices.size())
                     json.println("    }");
@@ -190,7 +191,7 @@ public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge>
 				json.println("      \"id\": " + edgeCounter + ",");
 				json.println("      \"source\": " + nodeIDs.get(edge.source) + ",");
 				json.println("      \"target\": " + nodeIDs.get(edge.target) + ",");
-				json.println("      \"label\": \"" + edge.label.type + "\"");
+				json.println("      \"label\": " + StringUtils.toJsonString(edge.label.type.toString()));
 				++edgeCounter;
                 if (edgeCounter == allEdges.size())
                     json.println("    }");
@@ -203,5 +204,9 @@ public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge>
 			Logger.error(ex);
 		}
 		Logger.info("CDS of PDG exported to: " + filepath);
+	}
+
+	private String getFileName() {
+		return srcFile.getName();
 	}
 }

@@ -27,16 +27,16 @@ import java.util.LinkedHashMap;
  */
 public class DataDependenceGraph extends AbstractProgramGraph<PDNode, DDEdge> {
 	
-	public final String fileName;
+	private final File srcFile;
 	public final CommonTokenStream tokens;
 	private ControlFlowGraph cfg;
 	
-	public DataDependenceGraph(String fileName, CommonTokenStream tokens) {
+	public DataDependenceGraph(File srcFile, CommonTokenStream tokens) {
 		super();
 		cfg = null;
-		this.fileName = fileName;
+		this.srcFile = srcFile;
 		this.tokens = tokens;
-        properties.put("label", "DDG of " + fileName);
+        properties.put("label", "DDG of " + getFileName());
         properties.put("type", "Data Dependence Graph (DDG)");
 	}
 	
@@ -72,7 +72,7 @@ public class DataDependenceGraph extends AbstractProgramGraph<PDNode, DDEdge> {
             outDir += File.separator;
         File outDirFile = new File(outDir);
         outDirFile.mkdirs();
-		String filename = fileName.substring(0, fileName.indexOf('.'));
+		String filename = getFileName().substring(0, getFileName().indexOf('.'));
 		String filepath = outDir + filename + "-PDG-DATA.dot";
 		try (PrintWriter dot = new PrintWriter(filepath, "UTF-8")) {
 			dot.println("digraph " + filename + "_PDG_DATA {");
@@ -124,7 +124,7 @@ public class DataDependenceGraph extends AbstractProgramGraph<PDNode, DDEdge> {
             outDir += File.separator;
         File outDirFile = new File(outDir);
         outDirFile.mkdirs();
-		String filename = fileName.substring(0, fileName.indexOf('.'));
+		String filename = getFileName().substring(0, getFileName().indexOf('.'));
 		String filepath = outDir + filename + "-PDG-DATA.gml";
 		try (PrintWriter gml = new PrintWriter(filepath, "UTF-8")) {
 			gml.println("graph [");
@@ -138,7 +138,7 @@ public class DataDependenceGraph extends AbstractProgramGraph<PDNode, DDEdge> {
                         gml.println("  " + property.getKey() + " \"" + property.getValue() + "\"");
                 }
             }
-            gml.println("  file \"" + this.fileName + "\"\n");
+            gml.println("  file \"" + this.getFileName() + "\"\n");
             //
 			Map<CFNode, Integer> ctrlNodes = new LinkedHashMap<>();
 			Map<PDNode, Integer> dataNodes = new LinkedHashMap<>();
@@ -198,7 +198,7 @@ public class DataDependenceGraph extends AbstractProgramGraph<PDNode, DDEdge> {
             outDir += File.separator;
         File outDirFile = new File(outDir);
         outDirFile.mkdirs();
-		String filename = fileName.substring(0, fileName.indexOf('.'));
+		String filename = getFileName().substring(0, getFileName().indexOf('.'));
 		String filepath;
 		int i=0;
 		do {
@@ -217,7 +217,8 @@ public class DataDependenceGraph extends AbstractProgramGraph<PDNode, DDEdge> {
                         json.println("  \"" + property.getKey() + "\": \"" + property.getValue() + "\",");
                 }
             }
-			json.println("  \"file\": \"" + fileName + "\",");
+			json.println("  \"file\": " + StringUtils.toJsonString(getFileName()) + ",");
+			json.println("  \"path\": " + StringUtils.toJsonString(srcFile.getPath()) + ",");
             //
 			json.println("  \"nodes\": [");
 			Map<CFNode, Integer> ctrlNodes = new LinkedHashMap<>();
@@ -243,14 +244,14 @@ public class DataDependenceGraph extends AbstractProgramGraph<PDNode, DDEdge> {
                     }
 					var name = (String)pdNode.getProperty("name");
 					if (isEntryPoint!=null) {
-						json.println("      \"name\": \"" + StringUtils.escape(name) + "\",");
+						json.println("      \"name\": " + StringUtils.toJsonString(name) + ",");
 					}
-                    json.println("      \"label\": \"" + StringUtils.escape(node.getCode()) + "\",");
+                    json.println("      \"label\": " + StringUtils.toJsonString(node.getCode()) + ",");
 					dataNodes.put(pdNode, nodeCounter);
 					json.println("      \"defs\": " + StringUtils.toJsonArray(pdNode.getAllDEFs()) + ",");
 					json.println("      \"uses\": " + StringUtils.toJsonArray(pdNode.getAllUSEs()));
 				} else
-                    json.println("      \"label\": \"" + StringUtils.escape(node.getCode()) + "\"");
+                    json.println("      \"label\": " + StringUtils.toJsonString(node.getCode()));
 				ctrlNodes.put(node, nodeCounter);
 				++nodeCounter;
                 if (nodeCounter == cfg.vertexCount())
@@ -296,5 +297,9 @@ public class DataDependenceGraph extends AbstractProgramGraph<PDNode, DDEdge> {
 			Logger.error(ex);
 		}
 		Logger.info("DDS of PDG exported to: " + filepath);
+	}
+
+	private String getFileName() {
+		return srcFile.getName();
 	}
 }

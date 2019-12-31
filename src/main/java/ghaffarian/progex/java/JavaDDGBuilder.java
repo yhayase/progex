@@ -118,7 +118,7 @@ public class JavaDDGBuilder {
 		// Iteratively, extract USE-DEF info for all program statements ...
 		DataDependenceGraph[] ddgs = new DataDependenceGraph[files.length];
 		for (int i = 0; i < ddgs.length; ++i)
-			ddgs[i] = new DataDependenceGraph(files[i].getName(), tokenStreams[i]);
+			ddgs[i] = new DataDependenceGraph(files[i], tokenStreams[i]);
 		//
 		Map<ParserRuleContext, Object>[] pdNodes = new Map[parseTrees.length];
 		for (int i = 0; i < parseTrees.length; ++i)
@@ -262,7 +262,7 @@ public class JavaDDGBuilder {
 		//
 		Logger.info("\nAnalyzing imports DEF-USE ... ");
 		Map<ParserRuleContext, Object> dummyMap = new HashMap<>();
-		DataDependenceGraph dummyDDG = new DataDependenceGraph("Dummy.java", null);
+		DataDependenceGraph dummyDDG = new DataDependenceGraph(new File("Dummy.java"), null);
 		boolean changed;
 		int iteration = 0;
 		do {

@@ -34,11 +34,23 @@ public class StringUtils {
         //
 		return removeConsecutiveSpaces(escapedCode);
 	}
-    
-    /**
-     * Replaces all occurrences of 3 spaces with a single space.
-     * The resulting string will only have runs of at most two spaces.
-     */
+
+    public static String toJsonString(String str) {
+        StringBuilder buf = new StringBuilder();
+	    buf.append("\"");
+        buf.append(str.replaceAll("\\\\", "\\\\\\\\").
+                replaceAll("\"", "\\\\\"").
+                replaceAll("\t", "\\\\t").
+                replaceAll("\n", "\\\\n").
+                replaceAll("\r", "\\\\r"));
+        buf.append("\"");
+        return buf.toString();
+    }
+
+        /**
+         * Replaces all occurrences of 3 spaces with a single space.
+         * The resulting string will only have runs of at most two spaces.
+         */
     public static String removeConsecutiveSpaces(String str) {
         String before;
         do {
@@ -69,7 +81,7 @@ public class StringUtils {
         StringBuilder json = new StringBuilder();
         json.append('[');
         for (int i = 0; ; ++i) {
-            json.append('\"').append(strArray[i]).append('\"');
+            json.append(toJsonString(strArray[i]));
             if (i == max)
                 return json.append(']').toString();
             json.append(", ");

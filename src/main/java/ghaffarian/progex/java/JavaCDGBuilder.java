@@ -44,7 +44,7 @@ public class JavaCDGBuilder {
 
 	public static ControlDependenceGraph build(ParseTree tree, File javaFile, CommonTokenStream tokens) {
 		Logger.debug("CTRL DEP ANALYSIS: " + javaFile.getPath());
-		ControlDependenceGraph cdg = new ControlDependenceGraph(javaFile.getName(), tokens);
+		ControlDependenceGraph cdg = new ControlDependenceGraph(javaFile, tokens);
 		ControlDependencyVisitor visitor = new ControlDependencyVisitor(cdg);
 		visitor.visit(tree);
 		return cdg;
