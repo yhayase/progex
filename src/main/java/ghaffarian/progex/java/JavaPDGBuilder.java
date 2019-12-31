@@ -47,6 +47,7 @@ public class JavaPDGBuilder {
 		private int numErrors = 0;
 		@Override
 		public void syntaxError(Recognizer<?, ?> recognizer, Object o, int i, int i1, String s, RecognitionException e) {
+			Logger.debug("syntaxError found.");
 			numErrors += 1;
 		}
 
