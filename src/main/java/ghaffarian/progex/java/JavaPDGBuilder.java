@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.BitSet;
 
 import ghaffarian.nanologger.Logger;
 import ghaffarian.progex.graphs.pdg.ControlDependenceGraph;
@@ -13,8 +14,14 @@ import ghaffarian.progex.graphs.pdg.DataDependenceGraph;
 import ghaffarian.progex.graphs.pdg.ProgramDependeceGraph;
 import ghaffarian.progex.java.parser.JavaLexer;
 import ghaffarian.progex.java.parser.JavaParser;
+import org.antlr.v4.runtime.ANTLRErrorListener;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.Parser;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
+import org.antlr.v4.runtime.atn.ATNConfigSet;
+import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 /**
@@ -35,7 +42,34 @@ public class JavaPDGBuilder {
 			javaFiles[i] = new File(javaFilePaths[i]);
 		return buildForAll(javaFiles);
 	}
-	
+
+	private static class ParserAndLexerListener implements ANTLRErrorListener {
+		private int numErrors = 0;
+		@Override
+		public void syntaxError(Recognizer<?, ?> recognizer, Object o, int i, int i1, String s, RecognitionException e) {
+			numErrors += 1;
+		}
+
+		@Override
+		public void reportAmbiguity(Parser parser, DFA dfa, int i, int i1, boolean b, BitSet bitSet, ATNConfigSet atnConfigSet) {
+			numErrors += 1;
+		}
+
+		@Override
+		public void reportAttemptingFullContext(Parser parser, DFA dfa, int i, int i1, BitSet bitSet, ATNConfigSet atnConfigSet) {
+			numErrors += 1;
+		}
+
+		@Override
+		public void reportContextSensitivity(Parser parser, DFA dfa, int i, int i1, int i2, ATNConfigSet atnConfigSet) {
+			numErrors += 1;
+		}
+
+		public int getNumErrors() {
+			return numErrors;
+		}
+	};
+
 	/**
 	 * Builds and returns Program Dependence Graphs (PDG) for each given Java file.
 	 */
@@ -50,14 +84,20 @@ public class JavaPDGBuilder {
 			InputStream inFile = new FileInputStream(javaFiles[i]);
 			ANTLRInputStream input = new ANTLRInputStream(inFile);
 			JavaLexer lexer = new JavaLexer(input);
+			var listener = new ParserAndLexerListener();
+			lexer.addErrorListener(listener);
 			CommonTokenStream tokens = new CommonTokenStream(lexer);
 			tokenStreams[i] = tokens;
 			JavaParser parser = new JavaParser(tokens);
-			if (parser.getNumberOfSyntaxErrors()==0) {
-				parseTrees[i] = parser.compilationUnit();
+			parser.addErrorListener(listener);
+			var tmpParseTree = parser.compilationUnit();
+			// parser.getNumberOfSyntaxErrors() is insufficient for detecting syntax errors,
+			// since a tokenizing error causes no parsing errors in some case.
+			if (listener.getNumErrors()==0) {
+				parseTrees[i] = tmpParseTree;
 			} else {
 				Logger.error("Error on parsing " + javaFiles[i].getPath());
-				numErrorFiles+=1;
+				numErrorFiles += 1;
 			}
 		}
 		if (numErrorFiles>0) {
