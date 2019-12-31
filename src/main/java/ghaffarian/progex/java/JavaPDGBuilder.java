@@ -43,7 +43,7 @@ public class JavaPDGBuilder {
 		return buildForAll(javaFiles);
 	}
 
-	private static class ParserAndLexerListener implements ANTLRErrorListener {
+	private static class SyntaxErrorCountListener implements ANTLRErrorListener {
 		private int numErrors = 0;
 		@Override
 		public void syntaxError(Recognizer<?, ?> recognizer, Object o, int i, int i1, String s, RecognitionException e) {
@@ -85,7 +85,7 @@ public class JavaPDGBuilder {
 			InputStream inFile = new FileInputStream(javaFiles[i]);
 			ANTLRInputStream input = new ANTLRInputStream(inFile);
 			JavaLexer lexer = new JavaLexer(input);
-			var listener = new ParserAndLexerListener();
+			var listener = new SyntaxErrorCountListener();
 			lexer.addErrorListener(listener);
 			CommonTokenStream tokens = new CommonTokenStream(lexer);
 			tokenStreams[i] = tokens;
