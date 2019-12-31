@@ -52,17 +52,17 @@ public class JavaPDGBuilder {
 
 		@Override
 		public void reportAmbiguity(Parser parser, DFA dfa, int i, int i1, boolean b, BitSet bitSet, ATNConfigSet atnConfigSet) {
-			numErrors += 1;
+			// nop
 		}
 
 		@Override
 		public void reportAttemptingFullContext(Parser parser, DFA dfa, int i, int i1, BitSet bitSet, ATNConfigSet atnConfigSet) {
-			numErrors += 1;
+			// nop
 		}
 
 		@Override
 		public void reportContextSensitivity(Parser parser, DFA dfa, int i, int i1, int i2, ATNConfigSet atnConfigSet) {
-			numErrors += 1;
+			// nop
 		}
 
 		public int getNumErrors() {
@@ -101,8 +101,10 @@ public class JavaPDGBuilder {
 			}
 		}
 		if (numErrorFiles>0) {
-			File[] newJavaFiles = new File[javaFiles.length - numErrorFiles];
-			ParseTree[] newParseTrees = new ParseTree[javaFiles.length - numErrorFiles];
+			final int newLength = javaFiles.length - numErrorFiles;
+			File[] newJavaFiles = new File[newLength];
+			ParseTree[] newParseTrees = new ParseTree[newLength];
+			CommonTokenStream[] newTokenStreams = new CommonTokenStream[newLength];
 			int nullCount = 0;
 			for (int i = 0; i < javaFiles.length; ++i) {
 				if (parseTrees[i] == null) {
@@ -110,12 +112,14 @@ public class JavaPDGBuilder {
 				} else {
 					newJavaFiles[i-nullCount] = javaFiles[i];
 					newParseTrees[i-nullCount] = parseTrees[i];
+					newTokenStreams[i-nullCount] = tokenStreams[i];
 				}
 			}
 			assert(numErrorFiles == nullCount);
 
 			javaFiles = newJavaFiles;
 			parseTrees = newParseTrees;
+			tokenStreams = newTokenStreams;
 		}
 		Logger.info("Done.");
 
