@@ -264,29 +264,31 @@ public class DataDependenceGraph extends AbstractProgramGraph<PDNode, DDEdge> {
 			json.println("  \"edges\": [");
 			int edgeCounter = 0;
             Iterator<Edge<CFNode, CFEdge>> cfEdges = cfg.allEdgesIterator();
+            String edgeDelimitor = "";
 			while (cfEdges.hasNext()) {
                 Edge<CFNode, CFEdge> ctrlEdge = cfEdges.next();
+                json.print(edgeDelimitor);
+                edgeDelimitor=",";
 				json.println("    {");
 				json.println("      \"id\": " + edgeCounter + ",");
 				json.println("      \"source\": " + ctrlNodes.get(ctrlEdge.source) + ",");
 				json.println("      \"target\": " + ctrlNodes.get(ctrlEdge.target) + ",");
 				json.println("      \"type\": \"Control\",");
 				json.println("      \"label\": \"" + ctrlEdge.label.type + "\"");
-                json.println("    },");
+                json.println("    }");
 				++edgeCounter;
 			}
 			for (Edge<PDNode, DDEdge> dataEdge: allEdges) {
+				json.print(edgeDelimitor);
+				edgeDelimitor=",";
 				json.println("    {");
 				json.println("      \"id\": " + edgeCounter + ",");
 				json.println("      \"source\": " + dataNodes.get(dataEdge.source) + ",");
 				json.println("      \"target\": " + dataNodes.get(dataEdge.target) + ",");
 				json.println("      \"type\": \"" + dataEdge.label.type + "\",");
 				json.println("      \"label\": \"" + dataEdge.label.var + "\"");
+				json.println("    }");
 				++edgeCounter;
-                if (edgeCounter == cfg.edgeCount() + allEdges.size())
-                    json.println("    }");
-                else
-                    json.println("    },");
 			}
 			json.println("  ]");
 			json.println("}");
