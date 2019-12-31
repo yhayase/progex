@@ -39,7 +39,11 @@ public class PDNode {
 				delim2 = ", ";
 				var token = tokens.get(i);
 				buf.append("\"");
-				buf.append(token.getText().replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\""));
+				buf.append(token.getText().replaceAll("\\\\", "\\\\\\\\").
+						replaceAll("\"", "\\\\\"").
+						replaceAll("\t", "\\\\t").
+						replaceAll("\n", "\\\\n").
+						replaceAll("\r", "\\\\r"));
 				buf.append("\"");
 			}
 		}
