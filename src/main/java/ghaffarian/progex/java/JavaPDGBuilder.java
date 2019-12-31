@@ -131,7 +131,7 @@ public class JavaPDGBuilder {
 			try {
 				ctrlSubgraphs[i] = JavaCDGBuilder.build(parseTrees[i], javaFiles[i], tokenStreams[i]);
 			} catch(NullPointerException e) {
-				Logger.error("Error on caluculating CDG from " + javaFiles[i].getPath());
+				Logger.error("Error on calculating CDG from " + javaFiles[i].getPath());
 				Logger.error(e);
 				// ctrlSubgraphs[i] remains null.
 			}
