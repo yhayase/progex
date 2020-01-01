@@ -243,7 +243,7 @@ public class DataDependenceGraph extends AbstractProgramGraph<PDNode, DDEdge> {
                         json.println("      \"entryPoint\": " + isEntryPoint + ",");
                     }
 					var name = (String)pdNode.getProperty("name");
-					if (isEntryPoint!=null) {
+					if (isEntryPoint!=null && name != null) {
 						json.println("      \"name\": " + StringUtils.toJsonString(name) + ",");
 					}
                     json.println("      \"label\": " + StringUtils.toJsonString(node.getCode()) + ",");

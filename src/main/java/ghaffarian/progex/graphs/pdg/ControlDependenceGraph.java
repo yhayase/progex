@@ -170,7 +170,7 @@ public class ControlDependenceGraph extends AbstractProgramGraph<PDNode, CDEdge>
 					json.println("      \"entryPoint\": " + isEntryPoint + ",");
 				}
 				var name = (String)node.getProperty("name");
-				if (isEntryPoint!=null) {
+				if (isEntryPoint!=null && name != null) {
 					json.println("      \"name\": " + StringUtils.toJsonString(name) + ",");
 				}
 				nodeIDs.put(node, nodeCounter);
