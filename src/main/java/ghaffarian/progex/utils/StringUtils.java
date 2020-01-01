@@ -38,11 +38,17 @@ public class StringUtils {
     public static String toJsonString(String str) {
         StringBuilder buf = new StringBuilder();
 	    buf.append("\"");
-        buf.append(str.replaceAll("\\\\", "\\\\\\\\").
+	    var content = str.replaceAll("\\\\", "\\\\\\\\").
                 replaceAll("\"", "\\\\\"").
-                replaceAll("\t", "\\\\t").
+                replaceAll("\b", "\\\\b").
+                replaceAll("\f", "\\\\f").
                 replaceAll("\n", "\\\\n").
-                replaceAll("\r", "\\\\r"));
+                replaceAll("\r", "\\\\r").
+                replaceAll("\t", "\\\\t");
+	    for (int i=0; i<32; i++) {
+	        content = content.replaceAll(Character.toString((char) i), String.format("\\\\u%04x", i));
+        }
+	    buf.append(content);
         buf.append("\"");
         return buf.toString();
     }
