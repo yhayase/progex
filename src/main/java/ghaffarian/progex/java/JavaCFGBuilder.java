@@ -139,9 +139,9 @@ public class JavaCFGBuilder {
 			// classDeclaration 
 			//   :  'class' Identifier typeParameters? 
 			//      ('extends' typeType)? ('implements' typeList)? classBody
-			classNames.push(ctx.Identifier().getText());
-			visit(ctx.classBody());
-			classNames.pop();
+			ControlFlowVisitor classVisitor = new ControlFlowVisitor(this.cfg, this.propKey, this.contexutalProperties);
+			classVisitor.classNames.push(ctx.Identifier().getText());
+			classVisitor.visit(ctx.classBody());
 			return null;
 		}
 
