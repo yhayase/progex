@@ -88,6 +88,12 @@ public class JavaCDGBuilder {
 			regionCounter = 1;
 			jmpCounter = 0;
 		}
+
+		@Override
+		public Void visitClassDeclaration(JavaParser.ClassDeclarationContext ctx) {
+			ControlDependencyVisitor classVisitor = new ControlDependencyVisitor(cdg);
+			return classVisitor.visit(ctx.classBody());
+		}
 		
 		@Override
 		public Void visitClassBodyDeclaration(JavaParser.ClassBodyDeclarationContext ctx) {
