@@ -25,6 +25,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.RuleNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import ghaffarian.progex.graphs.cfg.CFNode;
 import ghaffarian.progex.graphs.cfg.CFPathTraversal;
@@ -1398,9 +1399,50 @@ public class JavaDDGBuilder {
 		}
 		
 		@Override
-		public String visitExprDotID(JavaParser.ExprDotIDContext ctx) {
+		public String visitExprDotID(final JavaParser.ExprDotIDContext ctx) {
 			// expression '.' Identifier
-			return visit(ctx.expression()) + '.' + ctx.Identifier().getText();
+
+			class AddLeftMostIdentifierToUseListVisitor extends JavaBaseVisitor<String> {
+				@Override
+				public String visitChildren(RuleNode node) {
+					// block unintended recursive calls
+					return DefUseVisitor.this.visit(node);
+				}
+
+				@Override
+				public String visitExprDotID(JavaParser.ExprDotIDContext ctx) {
+					// recursively find left-most identifier
+					String lhsText = visit(ctx.expression());
+
+					return lhsText + "." + ctx.Identifier().getText();
+				}
+
+				@Override
+				public String visitExprPrimary(JavaParser.ExprPrimaryContext ctx) {
+					// ctx always has one PrimaryContext
+					return visit(ctx.getChild(0));
+				}
+
+				@Override
+				public String visitPrimary(JavaParser.PrimaryContext ctx) {
+					int childCount = ctx.getChildCount();
+					String text = ctx.getChild(0).getText();
+					if (childCount == 3) {
+						if (text.equals("(")) {
+							String expressionText = DefUseVisitor.this.visit(ctx.expression());
+							return "(" + expressionText + ")";
+						}
+					} else if (childCount == 1 && isUsableExpression(text)) {
+						useList.add(text);
+						return text;
+					}
+
+					return "<NOT SUPPORTED>";
+				}
+			}
+
+			return (new AddLeftMostIdentifierToUseListVisitor()).visit(ctx);
+			//return visit(ctx.expression()) + '.' + ctx.Identifier().getText();
 		}
 		
 		@Override
