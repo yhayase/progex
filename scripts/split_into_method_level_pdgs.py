@@ -22,6 +22,12 @@ for arg in sys.argv[1:]:
             edgeForward[int(edge["source"])].append(edge)
 
         for entry in entryPoints:
+            if "astId" not in entry:
+                if entry["label"] == "static" or entry["label"] == "block":
+                    continue  # ignore static and instance initializer block
+                print("Error: node ", str(entry), " does not have astId attribute in ", f.name, file=sys.stderr)
+                continue
+
             nodeQueue = [entry]
             nodesOfSubgraph = set()
             nodesOfSubgraph.add(entry["id"])
