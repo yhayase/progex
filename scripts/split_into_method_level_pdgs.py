@@ -57,5 +57,5 @@ for arg in sys.argv[1:]:
             outputDoc["edges"] = list(map(lambda id: edgeList[id], edgesOfSubgraph))
 
             with open(arg+"."+str(entry["astId"]), 'w') as outputFile:
-                json.dump(outputDoc, outputFile, indent=2)
+                json.dump(outputDoc, outputFile, indent=2, sort_keys=True)
 

@@ -49,5 +49,5 @@ outputDoc["label"] = "PDG of " + outputDoc["file"]
 outputDoc["nodes"] = newNodeList
 outputDoc["edges"] = newEdgeList
 
-json.dump(outputDoc, sys.stdout, indent=2)
+json.dump(outputDoc, sys.stdout, indent=2, sort_keys=True)
 
