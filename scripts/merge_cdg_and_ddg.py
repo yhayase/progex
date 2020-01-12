@@ -6,7 +6,7 @@ import sys
 newNodeList = []
 newEdgeList = []
 
-AstIdToNodeMap = {}
+AstIdToNewNodeId = {}
 outputDoc = {}
 
 for fileName in sys.argv[1:]:
@@ -22,12 +22,14 @@ for fileName in sys.argv[1:]:
         # copy nodes and give new ids, then create map from old ids to merged new ids
         for node in doc["nodes"]:
             if "astId" in node:
-                if node["astId"] in AstIdToNodeMap:
-                    nodeMapFromFileToMerged[int(node["id"])] = AstIdToNodeMap[node["astId"]]
+                if node["astId"] in AstIdToNewNodeId:
+                    nodeMapFromFileToMerged[int(node["id"])] = AstIdToNewNodeId[node["astId"]]
                     continue
 
             newId = len(newNodeList)
             nodeMapFromFileToMerged[int(node["id"])] = newId
+            if "astId" in node:
+                AstIdToNewNodeId[node["astId"]] = newId
 
             newNode = node.copy()
             newNode["id"] = newId
